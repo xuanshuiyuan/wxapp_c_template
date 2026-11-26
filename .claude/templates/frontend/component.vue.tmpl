@@ -1,0 +1,90 @@
+<!-- ============================================================ -->
+<!-- 组件模板（uni-app + Vue3 + uview-plus） -->
+<!-- 说明：组件单一职责，props 类型完整，必须处理错误/加载/空数据 -->
+<!-- 文件位置：components/{{componentKebab}}/{{componentKebab}}.vue -->
+<!-- ============================================================ -->
+
+<template>
+  <view class="{{componentKebab}}">
+    <!-- 加载态 -->
+    <view v-if="loading" class="state">
+      <text class="t-desc">加载中...</text>
+    </view>
+
+    <!-- 空数据态 -->
+    <view v-else-if="isEmpty" class="state">
+      <text class="t-desc">暂无数据</text>
+    </view>
+
+    <!-- 错误态 -->
+    <view v-else-if="error" class="state">
+      <text class="t-desc c-danger">{{ error }}</text>
+      <text class="btn btn--sm mt-16" @click="handleRetry">重试</text>
+    </view>
+
+    <!-- 正常内容 -->
+    <view v-else class="{{componentKebab}}__content">
+      <slot />
+    </view>
+  </view>
+</template>
+
+<script>
+import { computed } from 'vue';
+
+export default {
+  name: '{{ComponentName}}',
+  props: {
+    // 数据列表
+    list: {
+      type: Array,
+      default: () => [],
+    },
+    // 加载状态
+    loading: {
+      type: Boolean,
+      default: false,
+    },
+    // 错误信息
+    error: {
+      type: String,
+      default: '',
+    },
+  },
+  emits: ['retry'],
+  setup(props, { emit }) {
+    // 是否为空数据：不在 loading 中、无错误、且 list 为空
+    const isEmpty = computed(() => {
+      return !props.loading && !props.error && props.list.length === 0;
+    });
+
+    const handleRetry = () => {
+      emit('retry');
+    };
+
+    return {
+      isEmpty,
+      handleRetry,
+    };
+  },
+};
+</script>
+
+<style lang="scss" scoped>
+// 组件私有样式：只写该组件独有的结构
+.{{componentKebab}} {
+  width: 100%;
+}
+
+.{{componentKebab}}__content {
+  padding: 16rpx 0;
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx 24rpx;
+}
+</style>

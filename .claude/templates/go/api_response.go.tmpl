@@ -1,0 +1,89 @@
+// ============================================================
+// API Response 统一响应模板（Go）
+// 说明：所有接口必须使用此格式返回
+// ============================================================
+
+package utils
+
+// ApiResponse 统一 API 响应结构
+// 所有接口都使用此结构返回，前端据此判断请求是否成功
+type ApiResponse struct {
+    Code int         `json:"code"` // 状态码：0=成功，非0=错误
+    Msg  string      `json:"msg"`  // 提示信息
+    Data interface{} `json:"data"` // 业务数据
+}
+
+// PageRequest 分页请求参数
+type PageRequest struct {
+    Page     int `json:"page" validate:"min=1"`
+    PageSize int `json:"page_size" validate:"min=1,max=100"`
+}
+
+// PageResponse 分页响应结构
+type PageResponse struct {
+    Total    int64       `json:"total"`     // 总记录数
+    Page     int         `json:"page"`      // 当前页码
+    PageSize int         `json:"page_size"` // 每页大小
+    List     interface{} `json:"list"`      // 数据列表
+}
+
+// Success 成功响应
+func Success(data interface{}) ApiResponse {
+    return ApiResponse{
+        Code: ErrCodeSuccess,
+        Msg:  "success",
+        Data: data,
+    }
+}
+
+// Error 错误响应
+// 返回统一错误格式，code 为非0的错误码
+func Error(code int, msg string) ApiResponse {
+    return ApiResponse{
+        Code: code,
+        Msg:  msg,
+        Data: nil,
+    }
+}
+
+// ============================================================
+// 错误码常量定义
+// ============================================================
+
+const (
+    // 通用错误码
+    ErrCodeSuccess       = 0
+    ErrCodeInvalidParam  = 400
+    ErrCodeUnauthorized  = 401
+    ErrCodeForbidden     = 403
+    ErrCodeNotFound      = 404
+    ErrCodeInternalError = 500
+
+    // 业务错误码
+    ErrCodeUserNotExist  = 1001
+    ErrCodeOrderNotExist = 2001
+    ErrCodePayFailed     = 3001
+    ErrCodeRefundFailed  = 4001
+    ErrCodeMessageFailed = 5001
+)
+
+// GetErrorMsg 获取错误码对应的默认消息
+func GetErrorMsg(code int) string {
+    messages := map[int]string{
+        ErrCodeSuccess:       "成功",
+        ErrCodeInvalidParam:  "参数错误",
+        ErrCodeUnauthorized:  "未登录",
+        ErrCodeForbidden:     "无权限",
+        ErrCodeNotFound:      "资源不存在",
+        ErrCodeInternalError: "服务器内部错误",
+        ErrCodeUserNotExist:  "用户不存在",
+        ErrCodeOrderNotExist: "订单不存在",
+        ErrCodePayFailed:     "支付失败",
+        ErrCodeRefundFailed:  "退款失败",
+        ErrCodeMessageFailed: "消息发送失败",
+    }
+    if msg, ok := messages[code]; ok {
+        return msg
+    }
+    return "未知错误"
+}

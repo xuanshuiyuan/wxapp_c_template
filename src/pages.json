@@ -1,0 +1,103 @@
+{
+	"easycom": {
+		"autoscan": true, // components/组件名/组件名.vue 自动注册，页面无需 import
+		"custom": {
+			"^u--(.*)": "@/uni_modules/uview-plus/components/u-$1/u-$1.vue",
+			"^up-(.*)": "@/uni_modules/uview-plus/components/u-$1/u-$1.vue",
+			"^u-([^-].*)": "@/uni_modules/uview-plus/components/u-$1/u-$1.vue"
+		}
+	},
+	"pages": [ // pages 数组中第一项表示应用启动页
+		{
+			// 首页：demo 记录列表（分页 / 下拉刷新 / 删除 / 文档预览入口）
+			"path": "pages/home/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "首页",
+				"backgroundColor": "#E9F4EF",
+				"backgroundColorTop": "#E9F4EF"
+			}
+		},
+		{
+			// 我的：登录态展示 + 退出登录（tabBar 第二页，演示 tabBar 机制）
+			"path": "pages/mine/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "我的",
+				"backgroundColor": "#E9F4EF",
+				"backgroundColorTop": "#E9F4EF"
+			}
+		},
+		{
+			// 登录页（demo 登录 stub）：输入 user_id → POST /web/demo/login → 存 token
+			"path": "pages/login/index",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "登录",
+				"backgroundColor": "#E9F4EF",
+				"backgroundColorTop": "#E9F4EF"
+			}
+		}
+	],
+	"subPackages": [
+		{
+			// demo 示例分包：新建表单 + web-view 文档预览（演示分包机制）
+			"root": "packages/demo",
+			"pages": [
+				{
+					"path": "create/index",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTitleText": "新建记录",
+						"backgroundColor": "#E9F4EF",
+						"backgroundColorTop": "#E9F4EF"
+					}
+				},
+				{
+					// web-view 页用原生导航栏（web-view 需要占满内容区，不要再叠自绘顶栏）
+					"path": "webview/index",
+					"style": {
+						"navigationBarTitleText": "文档预览",
+						"backgroundColor": "#E9F4EF"
+					}
+				}
+			]
+		}
+	],
+	"preloadRule": {
+		// 首页点进 demo 分包前预下载，避免首次跳转出现「下载分包 → 空白」
+		"pages/home/index": {
+			"network": "all",
+			"packages": ["packages/demo"]
+		}
+	},
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "C 端小程序模板",
+		"navigationBarBackgroundColor": "#E9F4EF",
+		"backgroundColor": "#E9F4EF",
+		"backgroundColorTop": "#E9F4EF",
+		"backgroundColorBottom": "#E9F4EF"
+	},
+	"tabBar": {
+		"color": "#95A7A1",
+		"selectedColor": "#12A276",
+		"backgroundColor": "#FFFFFF",
+		"borderStyle": "white",
+		"list": [
+			{
+				"pagePath": "pages/home/index",
+				"text": "首页",
+				"iconPath": "static/tabbar/home.png",
+				"selectedIconPath": "static/tabbar/home-active.png"
+			},
+			{
+				"pagePath": "pages/mine/index",
+				"text": "我的",
+				"iconPath": "static/tabbar/mine.png",
+				"selectedIconPath": "static/tabbar/mine-active.png"
+			}
+		]
+	},
+	"uniIdRouter": {}
+}

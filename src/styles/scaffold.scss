@@ -1,0 +1,630 @@
+// ---------------------------------------------------------------------------
+// 脚手架通用版式（组件级样式）—— 通用 Design Token 版
+// 色值/字号/间距一律取 common/css/theme.scss 的 token。
+//
+// 与 base.scss 的分工：
+//   base.scss  = 原子类（.c-muted .fz-sm .mt-24 …）
+//   scaffold   = 成块的版式（.page .card .btn .kv .chip .badge …）
+// 页面里优先用这里的类，只有微调才写 scoped 样式。
+// ---------------------------------------------------------------------------
+
+/* ---------------- 页面骨架 ---------------- */
+
+.page {
+	min-height: 100vh;
+	box-sizing: border-box;
+	padding: $page-padding $page-padding $sp-10;
+	background-color: $bg-page;
+}
+
+// 带特殊头部的页面：内容上提贴边
+.page--hero {
+	padding-top: 0;
+}
+
+/* ---------------- 渐变头部（通用风格） ---------------- */
+
+.hero {
+	position: relative;
+	margin: 0 (-$page-padding) $sp-5;
+	padding: $sp-8 $page-padding $sp-8;
+	background: $bg-hero; // 通用浅蓝→白色渐变
+}
+
+.hero__name {
+	display: block;
+	font-size: $fs-display; // 46rpx（通用 24pt 页面主标题）
+	font-weight: $fw-bold;
+	color: $text-title;
+	line-height: $lh-display;
+}
+
+.hero__desc {
+	display: block;
+	margin-top: $sp-1; // 8rpx
+	font-size: $fs-body; // 25rpx
+	color: $text-sub;
+	line-height: 1.6;
+}
+
+.hero__meta {
+	display: flex;
+	flex-wrap: wrap;
+	margin-top: $sp-4;
+}
+
+.hero__tag {
+	display: inline-flex;
+	align-items: center;
+	height: 40rpx;
+	margin: 0 $sp-2 $sp-1 0;
+	padding: 0 $sp-2;
+	border-radius: $rd-chip; // 4rpx（通用芯片圆角）
+	background-color: $bg-fill-chip; // #F7F8FC
+	color: $text-main;
+	font-size: $fs-caption; // 23rpx
+	line-height: 1;
+}
+
+/* ---------------- HUD 舱体卡 ----------------
+   描边/舱体两级结构不变：外层渐变即「主色流光描边」，内层同形内缩 2rpx 成面板。
+   变化只有三件：斜切 → 圆角（$rd-card 28rpx）、主色 → 主色（薄荷绿）、
+   filter: drop-shadow → box-shadow（圆角矩形不必再借 filter 才不被裁）。
+   内缩档 = $rd-card − 2×2rpx，保证圆角同心、描边等宽。
+   ⚠️ 118 处调用点依赖类名，改名会全站塌，别改。
+*/
+
+.hud-frame {
+	position: relative;
+	margin-bottom: $card-gap; // 与其他卡片同一垂直节奏
+	padding: 2rpx;
+	// 描边默认**静态**（2026-10-29 用户定「只主模块流光」）：
+	// 一条柔和的主色渐变环，不加动画——118 处舱体里绝大多数是次级模块，
+	// 全部巡游既吵又在长列表页掉帧。
+	background: linear-gradient(
+		115deg,
+		rgba($color-primary, 0.50) 0%,
+		rgba($color-primary, 0.26) 30%,
+		rgba($text-title, 0.10) 52%,
+		rgba($color-primary, 0.26) 74%,
+		rgba($color-primary, 0.50) 100%
+	);
+	// 2026-10-29 换肤：44rpx 双斜切 → $rd-card 圆角；
+	// 圆角矩形用 box-shadow 即可（原先用 drop-shadow 是因为 clip-path 会把 box-shadow 切掉）
+	border-radius: $rd-card;
+	box-shadow: $shadow-card, $glow-primary;
+}
+
+/* 主模块流光（2026-10-29 用户定「只主模块流光」）：
+   只在视觉主模块上挂（例：首页主舱、榜单首卡），不要每张卡都加。
+   需要给新模块开流光时，在模板上加这个类即可；不要直接改回 .hud-frame。 */
+.hud-frame--flow {
+	background: linear-gradient(
+		115deg,
+		rgba($color-primary, 0.30) 0%,
+		rgba($color-primary, 1) 12%,
+		rgba($color-primary, 0.22) 26%,
+		rgba($text-title, 0.10) 50%,
+		rgba($color-primary, 0.22) 74%,
+		rgba($color-primary, 1) 88%,
+		rgba($color-primary, 0.30) 100%
+	);
+	background-size: 200% 200%;
+	animation: hud-flow 4.5s linear infinite;
+}
+
+.hud-panel {
+	position: relative;
+	overflow: hidden; // 扫描线/出血网格统一在此裁切
+	// 2026-10-29 换肤：舱面改「白瓷」——**白卡 + 左上极淡主色打光**。
+	// ⚠️ 不要再叠「上白下薄荷」的大面积渐变：页底本身就是薄荷白，卡面再罩一层，
+	// 整屏会糊成一片绿、白卡失去「浮起」的对比（A 稿的卡面是纯白，只有描边与投影分层）。
+	background:
+		radial-gradient(120% 85% at 8% -8%, rgba($color-primary, 0.06), transparent 52%),
+		$bg-card;
+	// 内切 = 外切 − 2×描边，圆角同心（原「斜边处描边等宽」规则的圆角版）
+	border-radius: calc(#{$rd-card} - 2rpx);
+}
+
+/* HUD 带舱（主舱矮体变体）：行数少的收尾带用更小一档圆角（20/18），轮廓与主舱错开做节奏；
+   内切 = 外切 − 2×描边同规则，描边流光/瓷面全继承 .hud-frame/.hud-panel */
+.hud-frame--band {
+	border-radius: 20rpx;
+	// 带舱走无投影平贴档：矮舱投影容易糊在圆角外成脏块（2026-09-21 真机反馈），保持无投影
+	box-shadow: none;
+}
+
+.hud-panel--band {
+	border-radius: 18rpx;
+}
+
+/* 描边流光关键帧：背景放大 2 倍后位移 0→100%，两条高亮黄带首尾同色、循环近似无缝 */
+@keyframes hud-flow {
+	0% {
+		background-position: 0% 0%;
+	}
+	100% {
+		background-position: 100% 100%;
+	}
+}
+
+/* ---------------- HUD 座舱页壳（薄荷白底 + 视口锁定滚动结构，tabBar 业务页共用） ----------------
+   2026-10-29 换肤：原「冷蓝 + 墨纱三档渐深」换成「上浅下略深的薄荷白」，顶部主色氛围光：
+   白色 HUD 舱卡与流光描边因此「浮」出页面；滚动走内部 scroll-view，根节点锁死视口高。
+   ⚠️ 导航栏 / tabBar / pages.json 的窗口底色必须同值（$nav-solid = #E9F4EF），
+   否则下拉回弹会露出窗口纯色、与固定栏形成色差。 */
+.hud-page {
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	overflow: hidden;
+	background:
+		// 顶部主色氛围光**只铺很浅的一段**（26% 高、起点在框外）：A 稿里它只是「页顶一抹绿」，
+		// 铺到 40% 会把上半屏整体压绿，白卡浮不起来
+		radial-gradient(120% 26% at 50% -4%, rgba($color-primary, 0.14), transparent 62%),
+		linear-gradient(180deg, #F6FBF8 0%, $bg-fill-weak 60%, $bg-fill-weak 100%);
+}
+
+/* ---------------- uview 弹层根节点不参与增长（全项目一处兜住） ----------------
+   uview 的 `u-popup` 根节点自带 `flex: 1`（其 `$u-popup-flex`），而本页壳 `.hud-page` 是
+   **flex 列 + 滚动区 flex:1** —— 弹层一旦是它的直接子项，就会**与滚动区瓜分剩余高度**：
+   一个弹层吃掉半屏、多层弹层把内容区挤到只剩四分之一（真机
+   「下半部分被遮住了」）。uview 内部（遮罩 `u-overlay` / 内容 `u-transition`）都是 fixed /
+   absolute 定位，**不依赖根节点高度**，故让根节点干脆不参与增长即可。
+   ⚠️ 必须 `!important`：uview 的样式是 scoped 编译产物（`.u-popup.data-v-x{flex:1}`），
+   优先级高于本全局规则，只有 !important 压得住。
+   （曾逐页包 `flex-shrink: 0` 宿主；现在一处兜住，新页不用再包） */
+.u-popup {
+	flex: none !important;
+}
+
+/* u-popup 底部抽屉圆角（2026-10-29 换肤）：uview 默认 100px（全圆），与 28rpx 的舱体不搭。
+   全项目 10 处用法均为 mode="bottom"，故只覆盖上两角。
+   ⚠️ 必须 !important：uview 的样式是 scoped 编译产物（.u-popup__content.data-v-x），
+   优先级高于本全局规则（同上面 .u-popup 那条例子的理由）。 */
+.u-popup__content {
+	border-radius: $rd-card $rd-card 0 0 !important;
+}
+
+/* 滚动区：flex 拿剩余高（min-height:0 防 flex 子项默认 auto 撑破列布局） */
+.hud-page__scroll {
+	flex: 1;
+	min-height: 0;
+}
+
+/* 内容 wrapper：接管 .page 的内边距职责（顶栏占位块在流内，顶部只需模块间距）；
+   底部 = $sp-10 安全区 + tabBar 页内浮层让位（--tab-overlay 由页面内联写入，MP 端为 0） */
+.hud-page__body {
+	padding: $sp-3 $page-padding calc(#{$sp-10} + var(--tab-overlay, 0px));
+}
+
+/* ---------------- HUD 瓦片（图标底盘：宫格 / 服务列表行共用） ----------------
+   圆角浅底盘 + 发丝描边。
+   双层结构保留：外层即 1rpx 发丝环，内层（plate）内缩 2rpx 盖出瓷面，
+   内层半径 = 外层 − 2rpx，圆角同心。 */
+.hud-tile {
+	position: relative;
+	width: 88rpx;
+	height: 88rpx;
+	flex-shrink: 0;
+	border-radius: $rd-tile;
+	background: linear-gradient(160deg, rgba($color-primary, 0.22), rgba($color-primary, 0.08));
+	box-shadow: inset 0 0 0 1rpx rgba($color-primary, 0.18);
+	transition: transform $duration-base $ease-standard;
+}
+
+/* 盘底内缩 2rpx 露出 1rpx 描边；主色淡光从底缘向上打亮 */
+.hud-tile__plate {
+	position: absolute;
+	top: 2rpx;
+	right: 2rpx;
+	bottom: 2rpx;
+	left: 2rpx;
+	border-radius: calc(#{$rd-tile} - 2rpx);
+	// ⚠️ 必须带不透明底：末端是半透明主色，若只写一层渐变，外圈 22% 的主色会透上来，瓦片整块发绿
+	background: linear-gradient(160deg, $bg-card, rgba($color-primary, 0.10)), $bg-card;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* 图标本体：不再带辉光（辉光交给外层瓦片），过渡留着给按下态用 */
+.hud-tile__icon {
+	width: 44rpx;
+	height: 44rpx;
+	transition: filter $duration-base $ease-standard;
+}
+
+/* ---------------- 卡片（通用风格） ---------------- */
+
+.card {
+	position: relative;
+	background-color: $bg-card;
+	border-radius: $rd-card; // 28rpx（2026-10-29 换肤：8rpx → 28rpx）
+	padding: $card-padding; // 32rpx
+	margin-bottom: $card-gap; // 24rpx
+	// 发丝描边走 inset 阴影：加 border 会让盒子宽高各多 2rpx，破坏「排版零改动」
+	box-shadow: $shadow-card, inset 0 0 0 1rpx $border-color;
+}
+
+.card--overlap {
+	margin-top: -40rpx; // 上提压住头部底部
+}
+
+.card__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	height: 48rpx;
+	margin-bottom: $sp-3; // 24rpx
+}
+
+.card__title {
+	position: relative;
+	padding-left: $sp-2; // 16rpx
+	font-size: $fs-body; // 25rpx（通用 13pt 正文）
+	font-weight: $fw-semibold;
+	color: $text-title;
+	line-height: 1;
+	letter-spacing: 0.4rpx;
+
+	&::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 2rpx;
+		bottom: 2rpx;
+		width: 6rpx;
+		border-radius: 3rpx;
+		// 2026-10-29：5rpx 纯黄竖条 → 6rpx 主色渐变圆角条
+		background: linear-gradient(180deg, $color-primary, $color-primary-dark);
+	}
+}
+
+.card__aside {
+	font-size: $fs-caption; // 23rpx
+	color: $text-muted;
+}
+
+/* ---------------- 键值行 ---------------- */
+
+.kv {
+	display: flex;
+	align-items: flex-start;
+	padding: 8rpx 0;
+	font-size: $fs-body; // 25rpx
+	line-height: 1.6;
+}
+
+.kv__k {
+	width: 170rpx;
+	flex-shrink: 0;
+	color: $text-sub;
+}
+
+.kv__v {
+	flex: 1;
+	color: $text-main;
+	word-break: break-all;
+}
+
+/* ---------------- 按钮（通用风格） ---------------- */
+
+.btn {
+	height: 64rpx;
+	padding: 0 $sp-4;
+	margin: 0 $sp-2 $sp-2 0;
+	border-radius: $rd-card; // 8rpx
+	border: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: $fs-body; // 25rpx
+	font-weight: $fw-medium;
+	color: $text-main;
+	background-color: $bg-hover;
+	font-family: inherit;
+	cursor: pointer;
+}
+
+.btn--hover {
+	opacity: 0.82;
+}
+
+.btn--primary {
+	// 2026-10-29：黄底墨字 → 主色渐变 + 白字；圆角统一走 $rd-button
+	background: linear-gradient(135deg, $color-primary 0%, $color-primary-dark 100%);
+	color: $text-on-yellow;
+	font-weight: $fw-semibold;
+	border-radius: $rd-button;
+}
+
+.btn--danger {
+	background-color: $color-danger;
+	color: $text-inverse;
+}
+
+.btn--ghost {
+	background-color: $bg-card;
+	border: 1rpx solid $border-color;
+	color: $text-sub;
+}
+
+.btn--soft {
+	background-color: $color-primary-light; // #FFF8E0
+	color: $color-primary-dark; // #F5BE1E 深黄
+	font-weight: $fw-medium;
+}
+
+// 行内小按钮
+.btn--sm {
+	height: 52rpx;
+	padding: 0 $sp-3;
+	margin: 0 $sp-2 $sp-2 0;
+	font-size: $fs-caption; // 23rpx
+	border-radius: $rd-tag; // 胶囊
+}
+
+// 大按钮
+.btn--lg {
+	height: 88rpx;
+	padding: 0 $sp-6;
+	font-size: $fs-cta; // 33rpx（17pt CTA 字号）
+	border-radius: $rd-button;
+}
+
+.btn--block {
+	width: 100%;
+	margin-right: 0;
+}
+
+.btn-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+/* ---------------- 列表项（通用风格） ---------------- */
+
+.list-item {
+	display: flex;
+	align-items: center;
+	padding: $sp-3 0; // 24rpx
+	border-bottom: 1rpx solid $divider-color;
+}
+
+/* 末行去发丝线：由使用方按序**显式**加这个类（`v-for` + `i === list.length - 1`）。
+   原先靠 `.list-item:last-child` 自动判，但结构伪类在小程序端不可靠（项目多处已改用显式类，
+   见 charge-record / cell-bars / battery 的 `--last` 同法），故收敛成显式档 */
+.list-item--last {
+	border-bottom: none;
+}
+
+.list-item--hover {
+	background-color: $bg-hover;
+	margin: 0 (-$card-padding);
+	padding-left: $card-padding;
+	padding-right: $card-padding;
+}
+
+// 圆形字母头像
+.avatar-letter {
+	width: 72rpx;
+	height: 72rpx;
+	flex-shrink: 0;
+	margin-right: $sp-3; // 24rpx
+	border-radius: $rd-card;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: $fs-body;
+	font-weight: $fw-semibold;
+	color: $color-accent; // 通用数值强调色
+	background-color: $bg-fill-weak; // #F0F4FD
+}
+
+.avatar-letter--round {
+	border-radius: $rd-pill;
+}
+
+/* ---------------- 徽标 / 标签（通用风格） ---------------- */
+
+.badge {
+	display: inline-flex;
+	align-items: center;
+	height: 30rpx;
+	padding: 0 $sp-1-5; // 12rpx
+	margin-right: $sp-2;
+	border-radius: $rd-tag; // 胶囊（2026-10-29：4rpx → 999rpx）
+	font-size: $fs-caption; // 23rpx
+	font-weight: $fw-medium;
+	line-height: 1;
+
+	&--on {
+		background-color: $bg-fill-weak; // #F0F4FD
+		color: $color-danger; // 通用危险色（类似「在售」高亮）
+	}
+
+	&--off {
+		background-color: $bg-fill-chip; // #F7F8FC
+		color: $text-sub;
+	}
+
+	&--warning {
+		// ⚠️ 暖色语义走 $color-warning：brand-orange 已是「数值强调（深绿）」
+		background-color: rgba($color-warning, 0.12);
+		color: $color-tag-warm-fg;
+	}
+}
+
+/* 分栏徽章（左深右浅） */
+.badge-split {
+	display: inline-flex;
+	height: 38rpx;
+	border-radius: $rd-badge; // 8rpx（通用 4pt）
+	overflow: hidden;
+	font-size: $fs-caption; // 23rpx
+	line-height: 38rpx;
+
+	&__left {
+		background: $text-title;
+		color: $text-inverse;
+		font-weight: $fw-semibold;
+		padding: 0 $sp-2;
+	}
+
+	&__right {
+		background: $bg-card;
+		color: $text-title;
+		font-style: normal;
+		font-weight: $fw-bold;
+		padding: 0 $sp-2;
+	}
+}
+
+/* 筛选 chip（通用风格） */
+
+.chip-scroll {
+	white-space: nowrap;
+	margin: 0 (-$page-padding) $sp-3;
+	padding: $sp-1-5 $page-padding; // 12rpx vertical
+}
+
+.chip {
+	display: inline-flex;
+	align-items: center;
+	height: $size-chip-h; // 46rpx（24pt）
+	padding: 0 $sp-3; // 24rpx
+	margin-right: $sp-2;
+	border: 1rpx solid transparent;
+	border-radius: $rd-tag; // 胶囊（2026-10-29：4rpx → 999rpx）
+	background-color: $bg-fill-chip;
+	color: $text-main;
+	font-size: $fs-body; // 25rpx（13pt）
+	font-family: inherit;
+	line-height: 1;
+	box-sizing: border-box;
+}
+
+.chip--on {
+	background-color: $bg-card;
+	border-color: $color-primary; // 主色发丝描边
+	color: $color-primary-dark;
+	font-weight: $fw-medium;
+}
+
+/* ---------------- 状态块（空态 / 失败 / 加载中） ---------------- */
+
+.state {
+	padding: $sp-8 $sp-6;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.state__text {
+	margin-top: $sp-3;
+	font-size: $fs-body;
+	color: $text-muted;
+}
+
+.state__retry {
+	margin-top: $sp-4;
+	padding: $sp-2 $sp-6;
+	border-radius: $rd-pill;
+	background-color: $bg-fill-weak;
+	color: $text-main;
+	font-size: $fs-body;
+}
+
+.more {
+	padding: $sp-4 0;
+	text-align: center;
+	font-size: $fs-body;
+	color: $text-muted;
+}
+
+/* ---------------- 宫格入口（通用风格 4 列） ---------------- */
+
+.grid {
+	display: flex;
+	flex-wrap: wrap;
+	margin: 0 (-$sp-2);
+}
+
+.grid__cell {
+	box-sizing: border-box;
+	width: 50%;
+	padding: $sp-2;
+}
+
+.tile {
+	height: 112rpx;
+	padding: $sp-4;
+	box-sizing: border-box;
+	border-radius: $rd-card;
+	background-color: $bg-fill-weak; // 通用弱填充
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.tile--hover {
+	background-color: $color-primary-light; // 浅黄
+}
+
+.tile__label {
+	font-size: $fs-body;
+	font-weight: $fw-medium;
+	color: $text-title;
+}
+
+.tile__desc {
+	margin-top: 4rpx;
+	font-size: $fs-caption;
+	color: $text-sub;
+}
+
+/* ---------------- 辅助 ---------------- */
+
+.tip {
+	margin-top: $sp-3;
+	padding: $sp-3 $sp-4;
+	// 多行长文本块：保持小圆角（别用 $rd-tag，999rpx 会变药丸形文本框）
+	border-radius: $rd-chip;
+	// ⚠️ 暖色语义走 $color-warning：brand-orange 已是「数值强调（深绿）」
+	background-color: rgba($color-warning, 0.10);
+	font-size: $fs-caption;
+	line-height: 1.6;
+	color: $color-tag-warm-fg;
+}
+
+.divider {
+	height: 1rpx;
+	background-color: $divider-color;
+	margin: $sp-3 0;
+}
+
+.text-muted {
+	font-size: $fs-caption;
+	color: $text-sub;
+}
+
+/* 底部安全区（值取 theme.scss 的 $safe-bottom，页面别自己写 env()） */
+.safe-bottom {
+	padding-bottom: $safe-bottom;
+}
+
+.footer-bar {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: $bg-card;
+	padding: $sp-3 $page-padding;
+	/* 两行写法缺一不可（纯 rpx 回退 + 叠安全区），见 theme.scss $bottom-bar-gap 注释 */
+	padding-bottom: $bottom-bar-gap;
+	padding-bottom: calc(#{$bottom-bar-gap} + #{$safe-bottom});
+	box-shadow: $shadow-bottom-bar;
+	display: flex;
+}

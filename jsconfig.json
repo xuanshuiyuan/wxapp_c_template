@@ -1,0 +1,28 @@
+{
+	// 只为编辑器服务：让 @/ 别名能跳转、能自动补全，不参与 uni-app 编译
+	"compilerOptions": {
+		"target": "esnext",
+		"module": "esnext",
+		"moduleResolution": "node",
+		"allowJs": true,
+		"checkJs": false,
+		"jsx": "preserve",
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["./src/*"]
+		}
+	},
+	"include": [
+		"src/main.js",
+		"src/App.vue",
+		"src/api/**/*",
+		"src/components/**/*",
+		"src/composables/**/*",
+		"src/config/**/*",
+		"src/pages/**/*",
+		"src/services/**/*",
+		"src/store/**/*",
+		"src/utils/**/*"
+	],
+	"exclude": ["node_modules", "unpackage", "uni_modules", ".backup"]
+}

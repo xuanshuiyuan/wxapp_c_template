@@ -1,0 +1,98 @@
+{
+	"name": "wxapp_c_template",
+	"appid": "",
+	"description": "uni-app C 端小程序模板",
+	"versionName": "1.0.0",
+	"versionCode": "100",
+	"quickapp": {},
+	"mp-weixin": {
+		// ⚠️ init.sh 会询问并替换；未填则保留占位，导入微信开发者工具前必须换成真实 appid
+		"appid": "REPLACE_WX_APPID",
+		"setting": {
+			"urlCheck": false,
+			"minified": true,
+			"postcss": true
+		},
+		"usingComponents": true,
+		// 按需注入：只注入页面 json 里 usingComponents 实际声明的组件代码
+		"lazyCodeLoading": "requiredComponents",
+		"permission": {
+			"scope.userLocation": {
+				"desc": "获取您的位置用于展示附近信息"
+			}
+		},
+		"requiredPrivateInfos": [
+			"getLocation"
+		]
+		// 跳转其他小程序的 appId 只需在业务代码里登记，不要再往本文件加
+		// navigateToMiniProgramAppIdList（该字段自 2020-04-24 起作废，devtools 会报无效 app.json）
+	},
+	"mp-alipay": {
+		"usingComponents": true
+	},
+	"mp-baidu": {
+		"usingComponents": true
+	},
+	"mp-toutiao": {
+		"usingComponents": true
+	},
+	"uniStatistics": {
+		"enable": false
+	},
+	"vueVersion": "3",
+	"app": {
+		"distribute": {
+			"icons": {
+				"android": {
+					"hdpi": "",
+					"xhdpi": "",
+					"xxhdpi": "",
+					"xxxhdpi": ""
+				}
+			}
+		}
+	},
+	"app-android": {
+		"distribute": {
+			"modules": {},
+			"icons": {
+				"hdpi": "",
+				"xhdpi": "",
+				"xxhdpi": "",
+				"xxxhdpi": ""
+			},
+			"splashScreens": {
+				"default": {}
+			}
+		}
+	},
+	"app-ios": {
+		"distribute": {
+			"modules": {},
+			"icons": {},
+			"splashScreens": {}
+		}
+	},
+	"web": {
+		"router": {
+			"mode": ""
+		}
+	},
+	"h5": {
+		"devServer": {
+			"port": 8080,
+			"disableHostCheck": true,
+			"https": false,
+			// H5 本地调试走同源代理（.env.development 的 VITE_HOST_H5 留空）：
+			// 后端未开 CORS 时，浏览器直连绝对地址会被拦，代理没有这个问题。
+			// ⚠️ 只对 npm run dev:h5 生效；生产 H5 用 VITE_HOST_H5（同域留空走相对路径）。
+			"proxy": {
+				"/v2": {
+					"target": "http://127.0.0.1:15000",
+					"changeOrigin": true,
+					"secure": false
+				}
+			}
+		}
+	}
+}

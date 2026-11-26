@@ -1,0 +1,110 @@
+# Workflow: feature（新功能开发）
+# 执行顺序：architect → api_designer → backend_service → repository_agent → test_agent → security_agent → reviewer
+
+# 规范来源：所有 stage 的 agent 必须遵守各 .claude/skills/rule-* 的「硬性禁令」小节（主题查表见 .claude/project-meta/skills-index.md，页面层禁止清单在 rule-project-structure），
+#           写法与清单按需读 .claude/skills/rule-*，架构原理读 docs/ARCHITECTURE.md（冲突时以后者+代码为准）
+name: feature
+description: 新功能完整开发工作流，从架构设计到代码审查
+
+trigger:
+  keywords: ["新功能", "新增", "feature", "开发", "实现"]
+  manual: "@feature"
+
+stages:
+  - id: architecture
+    agent: architect
+    description: 架构设计与技术决策
+    input_from: user
+    output_to: api_designer
+    timeout: 30m
+    quality_gate:
+      - 模块划分清晰
+      - 技术选型合理
+      - 无过度设计
+
+  - id: api_design
+    agent: api_designer
+    description: 接口设计
+    input_from: architect
+    output_to: backend_service
+    timeout: 20m
+    quality_gate:
+      - 接口路径符合规范
+      - 请求/响应结构完整
+      - 错误码定义充分
+
+  - id: business_logic
+    agent: backend_service
+    description: 业务逻辑实现
+    input_from: api_design
+    output_to: [repository_agent, test_agent]
+    timeout: 60m
+    quality_gate:
+      - 业务逻辑在 Service 层
+      - 错误处理完整
+      - 无重复代码
+
+  - id: data_layer
+    agent: repository_agent
+    description: 数据层实现
+    input_from: business_logic
+    output_to: backend_service
+    timeout: 30m
+    quality_gate:
+      - 表/模型结构设计合理
+      - 索引设计到位
+      - DAO 方法完整
+
+  - id: frontend_impl
+    agent: frontend_engineer
+    description: 前端实现
+    input_from: api_design
+    output_to: test_agent
+    timeout: 60m
+    quality_gate:
+      - 页面/组件符合规范
+      - 接口调用统一走封装层
+      - 错误/加载/空态处理完整
+
+  - id: testing
+    agent: test_agent
+    description: 测试编写
+    input_from: [business_logic, frontend_impl]
+    output_to: security_agent
+    timeout: 40m
+    quality_gate:
+      - 核心逻辑覆盖率 ≥ 80%
+      - 边界条件覆盖
+      - Mock 使用合理
+
+  - id: security_review
+    agent: security_agent
+    description: 安全审查
+    input_from: testing
+    output_to: reviewer
+    timeout: 20m
+    quality_gate:
+      - 无高危漏洞
+      - 敏感数据已保护
+      - 输入校验完整
+
+  - id: code_review
+    agent: reviewer
+    description: 最终代码审查（评审若执行必须最后一步；是否评审由用户决定）
+    review_confirmation:
+      ask: "收尾时问用户一次：是否评审？要做请在本仓新开窗口（评审必须新开窗口；代码窗口不自评）"
+      on_decline: "跳过本阶段，记录「评审：跳过（用户确认）」"
+      rules: "project-dev 步骤 12.5；报告写 versions/vN/review*.md，结论回 versions/vN/CHANGELOG.md「评审」小节"
+    input_from: security_review
+    output_to: user
+    timeout: 30m
+    quality_gate:
+      - 无阻断问题
+      - 代码规范达标
+      - 文档完整
+    final: true
+
+post_workflow:
+  # update_changelog 已于 2026-11-02 停用：变更记录由 git commit message 承担
+  - action: update_memory
+    description: 更新长期记忆（如涉及新业务规则）

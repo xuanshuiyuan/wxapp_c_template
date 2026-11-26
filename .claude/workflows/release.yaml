@@ -1,0 +1,66 @@
+# Workflow: release（发布流程）
+# 执行顺序：test_agent → security_agent → deploy_agent → reviewer
+
+# 规范来源：所有 stage 的 agent 必须遵守各 .claude/skills/rule-* 的「硬性禁令」小节（主题查表见 .claude/project-meta/skills-index.md，页面层禁止清单在 rule-project-structure），
+#           写法与清单按需读 .claude/skills/rule-*，架构原理读 docs/ARCHITECTURE.md（冲突时以后者+代码为准）
+name: release
+description: 发布工作流，从测试验证到部署审查
+
+trigger:
+  keywords: ["发布", "上线", "release", "deploy", "部署"]
+  manual: "@release"
+
+stages:
+  - id: release_test
+    agent: test_agent
+    description: 全量回归测试
+    input_from: user
+    output_to: security_agent
+    timeout: 60m
+    quality_gate:
+      - 全部测试通过
+      - 覆盖率达标
+      - 性能测试通过（如有）
+
+  - id: release_security
+    agent: security_agent
+    description: 安全终审
+    input_from: release_test
+    output_to: deploy_agent
+    timeout: 30m
+    quality_gate:
+      - 无高危漏洞
+      - 合规检查通过
+      - 第三方依赖安全
+
+  - id: deployment
+    agent: deploy_agent
+    description: 执行部署
+    input_from: release_security
+    output_to: reviewer
+    timeout: 60m
+    quality_gate:
+      - 部署步骤完整
+      - 回滚方案就绪
+      - 验证清单通过
+
+  - id: release_review
+    agent: reviewer
+    description: 发布审查（评审若执行必须最后一步；是否评审由用户决定）
+    review_confirmation:
+      ask: "收尾时问用户一次：是否评审？要做请在本仓新开窗口（评审必须新开窗口；代码窗口不自评）"
+      on_decline: "跳过本阶段，记录「评审：跳过（用户确认）」"
+      rules: "project-dev 步骤 12.5；报告写 versions/vN/review*.md，结论回 versions/vN/CHANGELOG.md「评审」小节"
+    input_from: deployment
+    output_to: user
+    timeout: 20m
+    quality_gate:
+      - 发布计划完整
+      - 风险评估到位
+      - 审批流程完成
+    final: true
+
+post_workflow:
+  # update_changelog 已于 2026-11-02 停用：变更记录由 git commit message 承担
+  - action: tag_version
+    description: 创建 Git tag

@@ -1,0 +1,110 @@
+// ============================================================
+// Service 模板（Go）
+// 说明：业务逻辑层，所有业务规则和流程编排在此层实现
+//       Controller 调 Service，Service 调 Repository/DAO
+// ============================================================
+
+package {{.PackageName}}
+
+import (
+    "fmt"
+    "{{.ModulePath}}/internal/repository"
+)
+
+// {{.Name}}Service {{.Description}}服务
+type {{.Name}}Service struct {
+    dao *repository.{{.Name}}DAO
+}
+
+// New{{.Name}}Service 创建服务实例
+func New{{.Name}}Service() *{{.Name}}Service {
+    return &{{.Name}}Service{
+        dao: repository.New{{.Name}}DAO(),
+    }
+}
+
+// Create{{.Name}}Request 创建请求参数
+type Create{{.Name}}Request struct {
+    Name   string `json:"name" validate:"required,max=100"`
+    Status int    `json:"status" validate:"oneof=1 2"`
+}
+
+// {{.Name}}Response 响应结构
+type {{.Name}}Response struct {
+    ID     int64  `json:"id"`
+    Name   string `json:"name"`
+    Status int    `json:"status"`
+}
+
+// List 列表查询
+// 返回分页数据，因为列表数据量可能很大，所以强制分页
+func (s *{{.Name}}Service) List(page, pageSize int) (*utils.PageResponse, error) {
+    // 参数默认值处理
+    if page < 1 {
+        page = 1
+    }
+    if pageSize < 1 || pageSize > 100 {
+        pageSize = 20
+    }
+
+    // 调用 DAO 层查询数据
+    list, total, err := s.dao.FindAll(page, pageSize)
+    if err != nil {
+        return nil, fmt.Errorf("查询列表失败: %w", err)
+    }
+
+    return &utils.PageResponse{
+        Total:    total,
+        Page:     page,
+        PageSize: pageSize,
+        List:     list,
+    }, nil
+}
+
+// Create 创建记录
+// 执行业务校验后创建新记录，校验逻辑放在 Service 层而非 Controller
+func (s *{{.Name}}Service) Create(req *Create{{.Name}}Request) (*{{.Name}}Response, error) {
+    // 1. 业务规则校验（Controller 只做参数格式校验，这里做业务校验）
+    exists, err := s.dao.ExistsByName(req.Name)
+    if err != nil {
+        return nil, fmt.Errorf("检查名称重复失败: %w", err)
+    }
+    if exists {
+        return nil, fmt.Errorf("名称已存在: %s", req.Name)
+    }
+
+    // 2. 构建数据模型
+    record := &repository.{{.Name}}{
+        Name:   req.Name,
+        Status: req.Status,
+    }
+
+    // 3. 持久化
+    if err := s.dao.Create(record); err != nil {
+        return nil, fmt.Errorf("创建记录失败: %w", err)
+    }
+
+    // 4. 返回结果
+    return &{{.Name}}Response{
+        ID:     record.ID,
+        Name:   record.Name,
+        Status: record.Status,
+    }, nil
+}
+
+// GetByID 根据 ID 查询详情
+func (s *{{.Name}}Service) GetByID(id int64) (*{{.Name}}Response, error) {
+    record, err := s.dao.FindByID(id)
+    if err != nil {
+        return nil, fmt.Errorf("查询详情失败: %w", err)
+    }
+    if record == nil {
+        return nil, fmt.Errorf("记录不存在")
+    }
+
+    return &{{.Name}}Response{
+        ID:     record.ID,
+        Name:   record.Name,
+        Status: record.Status,
+    }, nil
+}

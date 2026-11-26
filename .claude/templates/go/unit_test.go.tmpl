@@ -1,0 +1,161 @@
+// ============================================================
+// 单元测试模板（Go + table-driven tests）
+// 说明：使用 table-driven 模式编写测试用例
+//       覆盖正常场景、异常场景、边界条件
+// ============================================================
+
+package {{.PackageName}}
+
+import (
+    "testing"
+    "github.com/stretchr/testify/assert"
+)
+
+// Test{{.Name}}Service_List 列表查询测试
+func Test{{.Name}}Service_List(t *testing.T) {
+    tests := []struct {
+        name      string
+        page      int
+        pageSize  int
+        wantErr   bool
+        wantTotal int64
+    }{
+        {
+            name:      "正常情况_分页参数合法",
+            page:      1,
+            pageSize:  20,
+            wantErr:   false,
+            wantTotal: 0,
+        },
+        {
+            name:      "边界情况_page为0_应自动改为1",
+            page:      0,
+            pageSize:  20,
+            wantErr:   false,
+        },
+        {
+            name:      "边界情况_pageSize超过100_应限制为100",
+            page:      1,
+            pageSize:  200,
+            wantErr:   false,
+        },
+        {
+            name:      "边界情况_pageSize为0_应自动改为20",
+            page:      1,
+            pageSize:  0,
+            wantErr:   false,
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            svc := New{{.Name}}Service()
+            result, err := svc.List(tt.page, tt.pageSize)
+
+            if tt.wantErr {
+                assert.Error(t, err)
+            } else {
+                assert.NoError(t, err)
+                assert.NotNil(t, result)
+            }
+        })
+    }
+}
+
+// Test{{.Name}}Service_Create 创建记录测试
+func Test{{.Name}}Service_Create(t *testing.T) {
+    tests := []struct {
+        name    string
+        req     *Create{{.Name}}Request
+        wantErr bool
+        errMsg  string
+    }{
+        {
+            name: "正常情况_有效请求",
+            req: &Create{{.Name}}Request{
+                Name:   "test_name",
+                Status: 1,
+            },
+            wantErr: false,
+        },
+        {
+            name: "异常情况_名称为空",
+            req: &Create{{.Name}}Request{
+                Name:   "",
+                Status: 1,
+            },
+            wantErr: true,
+            errMsg:  "名称不能为空",
+        },
+        {
+            name: "异常情况_名称重复",
+            req: &Create{{.Name}}Request{
+                Name:   "duplicate_name",
+                Status: 1,
+            },
+            wantErr: true,
+            errMsg:  "名称已存在",
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            svc := New{{.Name}}Service()
+            result, err := svc.Create(tt.req)
+
+            if tt.wantErr {
+                assert.Error(t, err)
+                if tt.errMsg != "" {
+                    assert.Contains(t, err.Error(), tt.errMsg)
+                }
+                assert.Nil(t, result)
+            } else {
+                assert.NoError(t, err)
+                assert.NotNil(t, result)
+                assert.NotZero(t, result.ID)
+                assert.Equal(t, tt.req.Name, result.Name)
+            }
+        })
+    }
+}
+
+// Test{{.Name}}Service_GetByID 根据ID查询测试
+func Test{{.Name}}Service_GetByID(t *testing.T) {
+    tests := []struct {
+        name    string
+        id      int64
+        wantErr bool
+    }{
+        {
+            name:    "正常情况_有效ID",
+            id:      1,
+            wantErr: false,
+        },
+        {
+            name:    "异常情况_ID不存在",
+            id:      99999,
+            wantErr: true,
+        },
+        {
+            name:    "边界情况_ID为0",
+            id:      0,
+            wantErr: true,
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            svc := New{{.Name}}Service()
+            result, err := svc.GetByID(tt.id)
+
+            if tt.wantErr {
+                assert.Error(t, err)
+                assert.Nil(t, result)
+            } else {
+                assert.NoError(t, err)
+                assert.NotNil(t, result)
+                assert.Equal(t, tt.id, result.ID)
+            }
+        })
+    }
+}

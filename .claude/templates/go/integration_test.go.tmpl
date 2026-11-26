@@ -1,0 +1,99 @@
+// ============================================================
+// 集成测试模板（Go）
+// 说明：测试完整的请求链路，使用真实数据库（测试库）
+//       每个测试用例独立数据，测试完成后清理
+// ============================================================
+
+package {{.PackageName}}
+
+import (
+    "testing"
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
+)
+
+// setup{{.Name}}Test 集成测试准备
+// 初始化测试数据库连接和必要的依赖
+func setup{{.Name}}Test(t *testing.T) (*{{.Name}}Service, func()) {
+    // 初始化测试数据库（使用测试库，非生产库）
+    cleanup := initTestDB(t)
+
+    // 创建 Service 实例
+    svc := New{{.Name}}Service()
+
+    return svc, func() {
+        // 清理测试数据
+        cleanup()
+    }
+}
+
+// Test{{.Name}}Integration_CreateAndQuery 集成测试：创建后查询
+// 验证创建和查询的完整链路
+func Test{{.Name}}Integration_CreateAndQuery(t *testing.T) {
+    svc, cleanup := setup{{.Name}}Test(t)
+    defer cleanup()
+
+    // 1. 创建记录
+    createReq := &Create{{.Name}}Request{
+        Name:   "integration_test_record",
+        Status: 1,
+    }
+    created, err := svc.Create(createReq)
+    require.NoError(t, err)
+    require.NotNil(t, created)
+    require.NotZero(t, created.ID)
+
+    // 2. 查询刚创建的记录
+    queried, err := svc.GetByID(created.ID)
+    require.NoError(t, err)
+    require.NotNil(t, queried)
+
+    // 3. 验证数据一致
+    assert.Equal(t, created.ID, queried.ID)
+    assert.Equal(t, created.Name, queried.Name)
+    assert.Equal(t, created.Status, queried.Status)
+}
+
+// Test{{.Name}}Integration_DuplicateName 集成测试：重复名称
+func Test{{.Name}}Integration_DuplicateName(t *testing.T) {
+    svc, cleanup := setup{{.Name}}Test(t)
+    defer cleanup()
+
+    // 先创建一条记录
+    _, err := svc.Create(&Create{{.Name}}Request{
+        Name:   "duplicate_test",
+        Status: 1,
+    })
+    require.NoError(t, err)
+
+    // 尝试用相同名称再创建
+    _, err = svc.Create(&Create{{.Name}}Request{
+        Name:   "duplicate_test",
+        Status: 1,
+    })
+
+    // 预期返回重复错误
+    assert.Error(t, err)
+    assert.Contains(t, err.Error(), "已存在")
+}
+
+// Test{{.Name}}Integration_ListPagination 集成测试：分页查询
+func Test{{.Name}}Integration_ListPagination(t *testing.T) {
+    svc, cleanup := setup{{.Name}}Test(t)
+    defer cleanup()
+
+    // 预先创建多条测试数据
+    for i := 0; i < 30; i++ {
+        _, err := svc.Create(&Create{{.Name}}Request{
+            Name:   fmt.Sprintf("pagination_test_%d", i),
+            Status: 1,
+        })
+        require.NoError(t, err)
+    }
+
+    // 测试分页
+    result, err := svc.List(1, 10)
+    require.NoError(t, err)
+    assert.Equal(t, 10, len(result.List.([]interface{})))
+    assert.GreaterOrEqual(t, result.Total, int64(30))
+}

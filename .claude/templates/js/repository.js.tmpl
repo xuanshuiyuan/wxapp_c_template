@@ -1,0 +1,76 @@
+// ============================================================
+// Repository / DAO 模板（Node.js + Sequelize / Knex）
+// 说明：数据访问层，封装所有数据库操作
+//       不允许包含业务逻辑，只负责数据存取
+// ============================================================
+
+const { db } = require('../config/database');
+
+class {{RepositoryName}}Repository {
+  constructor(database = db) {
+    this.db = database;
+    this.tableName = '{{tableName}}';
+  }
+
+  // 创建记录
+  async create(data) {
+    const [record] = await this.db(this.tableName)
+      .insert(data)
+      .returning('*');
+    return record;
+  }
+
+  // 根据主键查询
+  async findById(id) {
+    const record = await this.db(this.tableName)
+      .where({ id })
+      .first();
+    return record || null;
+  }
+
+  // 分页查询列表
+  // 返回列表数据和总数，总数用于前端分页展示
+  async findAll(page, pageSize) {
+    const offset = (page - 1) * pageSize;
+
+    const [{ count }] = await this.db(this.tableName)
+      .count('id as count');
+
+    const list = await this.db(this.tableName)
+      .orderBy('id', 'desc')
+      .limit(pageSize)
+      .offset(offset);
+
+    return {
+      list,
+      total: Number(count),
+    };
+  }
+
+  // 根据名称检查是否存在
+  // 用于业务去重校验
+  async existsByName(name) {
+    const record = await this.db(this.tableName)
+      .where({ name })
+      .first('id');
+    return Boolean(record);
+  }
+
+  // 更新记录
+  async update(id, data) {
+    const [record] = await this.db(this.tableName)
+      .where({ id })
+      .update(data)
+      .returning('*');
+    return record;
+  }
+
+  // 删除记录
+  async delete(id) {
+    await this.db(this.tableName)
+      .where({ id })
+      .del();
+  }
+}
+
+module.exports = {{RepositoryName}}Repository;

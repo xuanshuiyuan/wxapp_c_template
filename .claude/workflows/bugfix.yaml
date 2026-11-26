@@ -1,0 +1,77 @@
+# Workflow: bugfix（Bug 修复）
+# 执行顺序：debugger → backend_service / frontend_engineer → test_agent → reviewer
+
+# 规范来源：所有 stage 的 agent 必须遵守各 .claude/skills/rule-* 的「硬性禁令」小节（主题查表见 .claude/project-meta/skills-index.md，页面层禁止清单在 rule-project-structure），
+#           写法与清单按需读 .claude/skills/rule-*，架构原理读 docs/ARCHITECTURE.md（冲突时以后者+代码为准）
+name: bugfix
+description: Bug 修复工作流，从问题排查到修复审查
+
+trigger:
+  keywords: ["bug", "修复", "fix", "报错", "异常", "问题"]
+  manual: "@bugfix"
+
+stages:
+  - id: diagnosis
+    agent: debugger
+    description: 问题定位与根因分析
+    input_from: user
+    output_to: [backend_service, frontend_engineer]
+    timeout: 45m
+    quality_gate:
+      - 根因明确
+      - 影响范围清晰
+      - 修复方案可行
+
+  - id: fix
+    agent: backend_service
+    description: 执行 Bug 修复（后端）
+    input_from: diagnosis
+    output_to: test_agent
+    timeout: 30m
+    quality_gate:
+      - 修复逻辑正确
+      - 不引入新问题
+      - 边界条件处理到位
+
+  - id: frontend_fix
+    agent: frontend_engineer
+    description: 执行 Bug 修复（前端）
+    input_from: diagnosis
+    output_to: test_agent
+    timeout: 30m
+    quality_gate:
+      - 修复逻辑正确
+      - 不影响其他端（微信小程序/H5/App）
+      - 边界条件处理到位
+
+  - id: regression_test
+    agent: test_agent
+    description: 回归测试
+    input_from: [fix, frontend_fix]
+    output_to: reviewer
+    timeout: 30m
+    quality_gate:
+      - Bug 场景有测试覆盖
+      - 相关功能回归通过
+      - 测试用例完整
+
+  - id: fix_review
+    agent: reviewer
+    description: 修复代码审查（评审若执行必须最后一步；是否评审由用户决定）
+    review_confirmation:
+      ask: "收尾时问用户一次：是否评审？要做请在本仓新开窗口（评审必须新开窗口；代码窗口不自评）"
+      on_decline: "跳过本阶段，记录「评审：跳过（用户确认）」"
+      rules: "project-dev 步骤 12.5；报告写 versions/vN/review*.md，结论回 versions/vN/CHANGELOG.md「评审」小节"
+    input_from: regression_test
+    output_to: user
+    timeout: 20m
+    quality_gate:
+      - 修复方案合理
+      - 无新增风险
+      - 规范达标
+    final: true
+
+post_workflow:
+  # update_changelog 已于 2026-11-02 停用：变更记录由 git commit message 承担
+  - action: update_bug_history
+    description: 记录到 memory/bug_history.md

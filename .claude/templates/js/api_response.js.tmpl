@@ -1,0 +1,96 @@
+// ============================================================
+// API Response 统一响应模板（Node.js）
+// 说明：所有接口必须使用此格式返回
+// ============================================================
+
+// 通用错误码
+const CODE_SUCCESS = 0;
+const CODE_INVALID_PARAM = 400;
+const CODE_UNAUTHORIZED = 401;
+const CODE_FORBIDDEN = 403;
+const CODE_NOT_FOUND = 404;
+const CODE_INTERNAL_ERROR = 500;
+
+// 业务错误码
+const CODE_USER_NOT_EXIST = 1001;
+const CODE_ORDER_NOT_EXIST = 2001;
+const CODE_PAY_FAILED = 3001;
+const CODE_REFUND_FAILED = 4001;
+const CODE_MESSAGE_FAILED = 5001;
+
+// 错误码消息映射
+const ERROR_MESSAGES = {
+  [CODE_SUCCESS]: '成功',
+  [CODE_INVALID_PARAM]: '参数错误',
+  [CODE_UNAUTHORIZED]: '未登录',
+  [CODE_FORBIDDEN]: '无权限',
+  [CODE_NOT_FOUND]: '资源不存在',
+  [CODE_INTERNAL_ERROR]: '服务器内部错误',
+  [CODE_USER_NOT_EXIST]: '用户不存在',
+  [CODE_ORDER_NOT_EXIST]: '订单不存在',
+  [CODE_PAY_FAILED]: '支付失败',
+  [CODE_REFUND_FAILED]: '退款失败',
+  [CODE_MESSAGE_FAILED]: '消息发送失败',
+};
+
+/**
+ * 成功响应
+ * @param {*} data
+ * @returns {Object}
+ */
+function success(data) {
+  return {
+    code: CODE_SUCCESS,
+    msg: 'success',
+    data,
+  };
+}
+
+/**
+ * 错误响应
+ * @param {number} code
+ * @param {string} msg
+ * @returns {Object}
+ */
+function error(code, msg) {
+  return {
+    code,
+    msg: msg || ERROR_MESSAGES[code] || '未知错误',
+    data: null,
+  };
+}
+
+/**
+ * 分页响应结构
+ * @param {Array} list
+ * @param {number} total
+ * @param {number} page
+ * @param {number} pageSize
+ * @returns {Object}
+ */
+function pageResponse(list, total, page, pageSize) {
+  return {
+    total,
+    page,
+    page_size: pageSize,
+    list,
+  };
+}
+
+module.exports = {
+  success,
+  error,
+  pageResponse,
+  CODE_SUCCESS,
+  CODE_INVALID_PARAM,
+  CODE_UNAUTHORIZED,
+  CODE_FORBIDDEN,
+  CODE_NOT_FOUND,
+  CODE_INTERNAL_ERROR,
+  CODE_USER_NOT_EXIST,
+  CODE_ORDER_NOT_EXIST,
+  CODE_PAY_FAILED,
+  CODE_REFUND_FAILED,
+  CODE_MESSAGE_FAILED,
+  getErrorMsg: (code) => ERROR_MESSAGES[code] || '未知错误',
+};

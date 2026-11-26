@@ -1,0 +1,96 @@
+// ============================================================
+// Repository / DAO 模板（Go + GORM）
+// 说明：数据访问层，封装所有数据库操作
+//       不允许包含业务逻辑，只负责数据存取
+// ============================================================
+
+package repository
+
+import (
+    "time"
+    "gorm.io/gorm"
+)
+
+// {{.Name}} {{.Description}}数据模型
+type {{.Name}} struct {
+    ID        int64          `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
+    Name      string         `gorm:"column:name;type:varchar(100);not null;comment:名称" json:"name"`
+    Status    int            `gorm:"column:status;type:tinyint;default:1;comment:状态 1=正常 2=禁用" json:"status"`
+    CreatedAt time.Time      `gorm:"column:created_at;autoCreateTime" json:"created_at"`
+    UpdatedAt time.Time      `gorm:"column:updated_at;autoUpdateTime" json:"updated_at"`
+    DeletedAt gorm.DeletedAt `gorm:"column:deleted_at;index" json:"-"`
+}
+
+// TableName 返回表名（小写+下划线）
+func ({{.Name}}) TableName() string {
+    return "{{.TableName}}"
+}
+
+// {{.Name}}DAO {{.Description}}数据访问对象
+type {{.Name}}DAO struct {
+    db *gorm.DB
+}
+
+// New{{.Name}}DAO 创建 DAO 实例
+func New{{.Name}}DAO() *{{.Name}}DAO {
+    return &{{.Name}}DAO{db: GetDB()}
+}
+
+// Create 创建记录
+func (d *{{.Name}}DAO) Create(record *{{.Name}}) error {
+    return d.db.Create(record).Error
+}
+
+// FindByID 根据主键查询
+func (d *{{.Name}}DAO) FindByID(id int64) (*{{.Name}}, error) {
+    var record {{.Name}}
+    err := d.db.Where("id = ?", id).First(&record).Error
+    if err != nil {
+        if err == gorm.ErrRecordNotFound {
+            return nil, nil // 查不到返回 nil，由 Service 判断
+        }
+        return nil, err
+    }
+    return &record, nil
+}
+
+// FindAll 分页查询列表
+// 返回列表数据和总数，总数用于前端分页展示
+func (d *{{.Name}}DAO) FindAll(page, pageSize int) ([]{{.Name}}, int64, error) {
+    var list []{{.Name}}
+    var total int64
+
+    // 查询总数
+    if err := d.db.Model(&{{.Name}}{}).Count(&total).Error; err != nil {
+        return nil, 0, err
+    }
+
+    // 分页查询
+    offset := (page - 1) * pageSize
+    err := d.db.Offset(offset).Limit(pageSize).
+        Order("id DESC").
+        Find(&list).Error
+    if err != nil {
+        return nil, 0, err
+    }
+
+    return list, total, nil
+}
+
+// ExistsByName 根据名称检查是否存在
+// 用于业务去重校验
+func (d *{{.Name}}DAO) ExistsByName(name string) (bool, error) {
+    var count int64
+    err := d.db.Model(&{{.Name}}{}).Where("name = ?", name).Count(&count).Error
+    return count > 0, err
+}
+
+// Update 更新记录
+func (d *{{.Name}}DAO) Update(record *{{.Name}}) error {
+    return d.db.Save(record).Error
+}
+
+// Delete 软删除记录
+func (d *{{.Name}}DAO) Delete(id int64) error {
+    return d.db.Where("id = ?", id).Delete(&{{.Name}}{}).Error
+}

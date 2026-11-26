@@ -1,0 +1,216 @@
+// ===========================================================================
+// 项目设计 token —— 全项目唯一取值源
+//
+// ★ 换新项目：改本文件的值，再同步 config/theme.js 的 JS 镜像；下层自动跟随
+// ★ 栅格基数：4pt → 8rpx（所有间距/尺寸都是 8rpx 的倍数，除发丝线外）
+// ★ 只允许写 SCSS 变量，禁止写任何 CSS 规则
+// ⚠️ 定义顺序（错了会互相污染）：
+//    ① $color-primary 必须在其它引用它的变量之前；
+//    ② $color-warning 必须是字面值，不能 alias 其它语义色。
+// ===========================================================================
+
+// ============================
+// 品牌色
+// ============================
+
+// 主色三档：CTA / 进度条 / 标题竖条 / 选中芯片 / 活跃分页
+$color-primary: #1FBF8F;
+$color-primary-dark: #12A276; // 按下态 / 图标 accent / 次级强调
+$color-primary-light: #E6F8F1; // 主色浅底
+
+// 数值强调（金额 / 大数字 / 预计日期）：与暖色告警区分
+$color-accent: #0E9B72;
+$color-accent-soft: #E8F7F2;
+
+$color-tag-warm-bg: #FFF4E2; // 促销标签底
+$color-tag-warm-fg: #B26A05; // 促销标签文字
+
+$color-success: #16A34A;
+// 告警必须是暖橙，不能 alias $color-accent，否则「异常」会被染成安全的绿
+$color-warning: #F0A22E;
+$color-warning-text: #B26A05; // warning 徽标文字（浅底对比不足压深）
+$color-warning-text-soft: #C08A3E;
+$color-danger: #EF4444;
+$color-info: #8C9B95;
+
+// 地图路线色：地图类产品「路线 = 冷色」；原生 <map> 的 polyline color 是 prop，
+// 与 config/theme.js 的 theme.track 同值，改色必须一起改
+$color-track: #2F7FE0;
+
+// ============================
+// 文字
+// ============================
+$text-title: #1B2A25; // ink-1：标题 / 正文 / Tab / 深色按钮底
+$text-main: #2C3A34; // ink-2：未选中芯片文字
+$text-sub: #5D716A; // ink-3：说明 / 单位 / 次要标签
+$text-muted: #95A7A1; // ink-4：水印 / 占位
+$text-disabled: #B9C6C1;
+$text-inverse: #FFFFFF;
+$text-on-yellow: #FFFFFF; // 主色底上的文字（历史名）
+$text-on-yellow-2: rgba(255, 255, 255, 0.7); // 主色底副文字
+
+// ============================
+// 背景与填充
+// ============================
+$bg-page: #FFFFFF;
+$bg-card: #FFFFFF;
+$bg-fill-weak: #F2F8F5; // 信息条 / 页面底 / 图标底盘
+$bg-fill-chip: #EFF9F5; // 未选中芯片 / 分区间隙带 / 骨架块
+$bg-fill-icon: #2F4A42; // 快捷入口圆形图标底盘
+$bg-fill-icon-soft: #E4F4EE;
+$bg-fill-inverse: #14261F;
+$bg-hero: linear-gradient(180deg, #D8F2E8 0%, #E4F7F0 8%, #EFFAF6 14%, #F8FDFB 22%, #FFFFFF 30%);
+$bg-hover: #F2F7F5;
+$bg-mask: rgba(0, 0, 0, 0.45);
+
+// ★ 导航栏 / tabBar / pages.json 窗口底色的**唯一真源**（三处必须同值）
+// 导航栏背景必须是纯色：下拉回弹时露出的窗口区用 pages.json 的同值纯色
+$nav-solid: #E9F4EF;
+
+// 示意地图画布：画布比页底深一档才和页底分得开；街区块比画布亮，靠负空间读作道路
+$map-canvas-1: #E8EFEA;
+$map-canvas-2: #DDE8E2;
+$map-block: rgba(255, 255, 255, 0.58);
+$map-park: rgba(205, 226, 194, 0.55);
+
+// ============================
+// 描边
+// ============================
+$border-color: #E3EFE9;
+$border-color-2: #E3EFE9;
+$divider-color: #E2EBE7;
+$line-chip: #3F5B52;
+
+// ============================
+// 字号（rpx）
+// ============================
+$fs-micro: 21rpx;
+$fs-caption: 23rpx;
+$fs-body: 25rpx;
+$fs-label: 29rpx;
+$fs-cta: 33rpx;
+$fs-price: 35rpx;
+$fs-tab: 42rpx;
+$fs-display: 46rpx;
+$fs-hero: 80rpx;
+
+// 旧名兼容映射
+$fs-xs: $fs-micro;
+$fs-sm: $fs-caption;
+$fs-base: $fs-body;
+$fs-md: $fs-body;
+$fs-lg: $fs-label;
+$fs-xl: $fs-cta;
+$fs-2xl: $fs-tab;
+$fs-3xl: $fs-display;
+
+// ============================
+// 字重
+// ============================
+$fw-bold: 700;
+$fw-semibold: 600;
+$fw-medium: 500;
+$fw-regular: 400;
+
+// ============================
+// 行高
+// ============================
+$lh-display: 62rpx;
+$lh-hero: 80rpx;
+$lh-tab: 54rpx;
+$lh-price: 46rpx;
+$lh-cta: 42rpx;
+$lh-label: 38rpx;
+$lh-body: 35rpx;
+$lh-caption: 31rpx;
+$lh-micro: 27rpx;
+
+$lh-tight: 1.25;
+$lh-base: 1.6;
+$lh-loose: 1.8;
+
+// ============================
+// 间距（rpx，基数 8rpx）
+// ============================
+$sp-0-5: 4rpx;
+$sp-1: 8rpx;
+$sp-1-5: 12rpx;
+$sp-2: 16rpx;
+$sp-3: 24rpx;
+$sp-4: 32rpx;
+$sp-5: 40rpx;
+$sp-6: 48rpx;
+$sp-7: 56rpx;
+$sp-8: 64rpx;
+$sp-10: 80rpx;
+
+// 语义间距
+$page-padding: $sp-4;
+$card-padding: $sp-4;
+$card-gap: $sp-3;
+$section-gap: $sp-1-5;
+$chip-gap: $sp-2;
+$nav-height: 84rpx;
+// ★ 固定底栏下边距：CTA 底缘到屏幕底缘的非安全区那段。全项目唯一定义处，
+//   底栏一律写成两行（第一行纯 rpx 回退必须有，第二行再叠安全区）：
+//     padding-bottom: $bottom-bar-gap;
+//     padding-bottom: calc(#{$bottom-bar-gap} + #{$safe-bottom});
+$bottom-bar-gap: $sp-2;
+
+// ============================
+// 安全区
+// ============================
+// ★ 唯一定义处：凡是要留安全距离的地方一律把这两个常量算进 calc，禁止手写 env()
+$safe-bottom: env(safe-area-inset-bottom);
+$safe-top: env(safe-area-inset-top);
+$safe-left: env(safe-area-inset-left);
+$safe-right: env(safe-area-inset-right);
+
+// ============================
+// 圆角
+// ============================
+$rd-tile: 26rpx;
+$rd-tag: 999rpx;
+$rd-card: 28rpx;
+$rd-chip: 12rpx;
+$rd-badge: 999rpx;
+$rd-lg: 32rpx;
+$rd-pill: 999rpx;
+$rd-button: 44rpx;
+
+// 旧名兼容
+$rd-sm: $rd-chip;
+$rd-md: $rd-card;
+$rd-full: $rd-pill;
+
+// ============================
+// 阴影
+// ============================
+$shadow-card: 0 10rpx 26rpx rgba(21, 66, 53, 0.06);
+$shadow-bottom-bar: 0 -6rpx 20rpx rgba(21, 66, 53, 0.08);
+$shadow-float: 0 16rpx 40rpx rgba(21, 66, 53, 0.16);
+$glow-primary: 0 0 20rpx rgba(31, 191, 143, 0.14);
+
+// ============================
+// 组件尺寸
+// ============================
+$size-cta-h: 92rpx;
+$size-chip-h: 46rpx;
+$size-icon-circle: 38rpx;
+$size-icon-button: 84rpx;
+$size-tab-underline-w: 36rpx;
+$size-tab-underline-h: 6rpx;
+
+// ============================
+// z-index
+// ============================
+$z-nav: 100;
+$z-bottom-bar: 200;
+$z-popover: 500;
+
+// ============================
+// 动效
+// ============================
+$ease-standard: cubic-bezier(.4, 0, .2, 1);
+$duration-fast: .15s;
+$duration-base: .25s;

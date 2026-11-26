@@ -1,0 +1,240 @@
+// ---------------------------------------------------------------------------
+// 全局基础样式入口。所有「值」来自 common/css/theme.scss（经 uni.scss 自动注入，无需 import）。
+//
+// 本文件定义「所有页面的基础样式」，新项目接手时看这里就够了：
+//   page {}     页面默认：背景色、正文颜色、字号、行高（没套 .page 也生效）
+//   --up-*      uview-plus 组件库自动跟随项目色
+//   .t-*        语义文字样式：标题层级 / 简介 / 辅助提示，一类一个角色
+//   原子类      单属性工具（.c-* .fz-* .m-* …）
+//
+// ★ 换新项目想直接换颜色/字号/间距的值：只改 common/css/theme.scss 一个文件
+//   （+ 同步 config/theme.js 镜像），全站换肤；本文件与 scaffold.scss 全是
+//   token 引用，一般一行都不用动。想改「默认观感 / 标题尺度」才动这里。
+//
+// 命名与 ColorUI 完全错开，两套可以共存：
+//   颜色  .c-primary .c-title .c-sub ...        （ColorUI 的 .text-xxx 别再用了）
+//   字号  .fz-xs .fz-sm .fz-base .fz-md .fz-lg .fz-xl .fz-2xl
+//   间距  .mt-24 .px-16 .p-6 ... （数字就是 rpx 值）
+//   圆角  .rd-sm .rd-md .rd-lg .rd-full
+// 新代码统一用这一套；ColorUI 只保留 flex / 布局类（.flex .flex-col .justify-between
+// .align-center .text-center .flex-wrap）和 .solid-* 边框类。
+// ---------------------------------------------------------------------------
+
+/* ---------------- 页面基础默认 + 组件库跟色 ---------------- */
+
+// 全页兜底：任何页面（包括没套 .page 的）默认就是这套背景/正文。
+// 字体族跟 ColorUI 的系统栈走，这里不重复定义。
+page {
+	// 2026-10-29 换肤：改用页底色而不是纯白。
+	// H5 端 uni-app 会给 tabBar 预留一段高度（uni-page-wrapper = 100% − tab-bar-height），
+	// 非 tab 页那段没有内容、露出来的是这里设的底色——纯白就是一条白带，与页底同值才看不出接缝。
+	background-color: $bg-fill-weak;
+	color: $text-main;
+	font-size: $fs-base;
+	line-height: $lh-base;
+
+	// 让 uview-plus 组件（按钮、开关、选中态…）跟随项目主色
+	--up-primary: #{$color-primary};
+	--up-primary-dark: #{$color-primary-dark};
+	--up-primary-light: #{$color-primary-light};
+	--up-main-color: #{$text-main};
+	--up-content-color: #{$text-sub};
+	--up-tips-color: #{$text-muted};
+	--up-border-color: #{$border-color};
+	--up-bg-color: #{$bg-page};
+}
+
+/* ---------------- 颜色 ---------------- */
+
+.c-primary { color: $color-primary; }
+.c-success { color: $color-success; }
+.c-warning { color: $color-warning; }
+.c-danger { color: $color-danger; }
+.c-info { color: $color-info; }
+
+.c-title { color: $text-title; }
+.c-main { color: $text-main; }
+.c-sub { color: $text-sub; }
+.c-muted { color: $text-muted; }
+.c-disabled { color: $text-disabled; }
+.c-white { color: $text-inverse; }
+.c-link { color: $color-primary; }
+
+.bg-page { background-color: $bg-page; }
+.bg-card { background-color: $bg-card; }
+.bg-hover { background-color: $bg-hover; }
+.bg-primary { background-color: $color-primary; }
+.bg-primary-light { background-color: $color-primary-light; }
+// 浅色底从 token 推导（rgba($token, α) 编译期计算），换主色/状态色不用回来改硬编码
+.bg-success-light { background-color: rgba($color-success, 0.1); }
+.bg-warning-light { background-color: rgba($color-warning, 0.12); }
+.bg-danger-light { background-color: rgba($color-danger, 0.1); }
+
+/* ---------------- 语义文字：标题层级 / 正文 / 简介 / 辅助 ---------------- */
+
+// 页面级排版直接用语义类，一类一个角色；卡片内标题仍走 scaffold 的 .card__title。
+// 要微调再叠原子类（如 .t-h3.c-primary）。
+
+.t-h1 { // 大标题：hero 主名、详情页顶部
+	font-size: $fs-2xl; // 42rpx（旧稿注释写 44，品牌体系换档后 $fs-2xl→$fs-tab=42）
+	font-weight: 600;
+	color: $text-title;
+	line-height: $lh-tight;
+}
+
+.t-h2 { // 页面级标题：一屏一个的那种
+	font-size: $fs-xl; // 33rpx（$fs-xl→$fs-cta）
+	font-weight: 600;
+	color: $text-title;
+	line-height: $lh-tight;
+}
+
+.t-h3 { // 区块标题：分组、弹层标题
+	font-size: $fs-lg; // 29rpx（$fs-lg→$fs-label）
+	font-weight: 600;
+	color: $text-title;
+	line-height: $lh-tight;
+}
+
+.t-body { // 正文段落（详情/富文本兜底，行距更松）
+	font-size: $fs-base;
+	color: $text-main;
+	line-height: $lh-loose;
+}
+
+.t-desc { // 简介、说明文字
+	font-size: $fs-sm;
+	color: $text-sub;
+	line-height: $lh-base;
+}
+
+.t-note { // 辅助提示：时间、计数、免责
+	font-size: $fs-xs;
+	color: $text-muted;
+	line-height: $lh-base;
+}
+
+.t-strong { // 行内强调：正文里的关键信息
+	font-weight: 600;
+	color: $text-title;
+}
+
+.t-num { // 数字/金额：稍大、加粗、等宽数字对齐
+	font-size: $fs-md;
+	font-weight: 600;
+	color: $text-title;
+	font-variant-numeric: tabular-nums;
+}
+
+.t-link { // 行内可点文字（小程序里点击仍要绑事件，这类只管观感）
+	color: $color-primary;
+}
+
+.t-disabled { // 禁用态文字
+	color: $text-disabled;
+}
+
+/* ---------------- 字号 / 字重 / 行高 ---------------- */
+
+.fz-xs { font-size: $fs-xs; }
+.fz-sm { font-size: $fs-sm; }
+.fz-base { font-size: $fs-base; }
+.fz-md { font-size: $fs-md; }
+.fz-lg { font-size: $fs-lg; }
+.fz-xl { font-size: $fs-xl; }
+.fz-2xl { font-size: $fs-2xl; }
+
+.fw-normal { font-weight: 400; }
+.fw-medium { font-weight: 500; }
+/* 注意：标题三档 .t-h1~.t-h3 用的都是 600（本类同值），
+   而 token $fw-bold 是 700 —— 两者不是同一档，SCSS 里要 700 请显式写 $fw-bold */
+.fw-bold { font-weight: 600; }
+
+.lh-tight { line-height: $lh-tight; }
+.lh-base { line-height: $lh-base; }
+.lh-loose { line-height: $lh-loose; }
+
+/* ---------------- 间距：数字即 rpx ---------------- */
+
+$spacing-steps: (4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80);
+
+@each $n in $spacing-steps {
+	.m-#{$n} { margin: #{$n}rpx; }
+	.mt-#{$n} { margin-top: #{$n}rpx; }
+	.mr-#{$n} { margin-right: #{$n}rpx; }
+	.mb-#{$n} { margin-bottom: #{$n}rpx; }
+	.ml-#{$n} { margin-left: #{$n}rpx; }
+	.mx-#{$n} { margin-left: #{$n}rpx; margin-right: #{$n}rpx; }
+	.my-#{$n} { margin-top: #{$n}rpx; margin-bottom: #{$n}rpx; }
+
+	.p-#{$n} { padding: #{$n}rpx; }
+	.pt-#{$n} { padding-top: #{$n}rpx; }
+	.pr-#{$n} { padding-right: #{$n}rpx; }
+	.pb-#{$n} { padding-bottom: #{$n}rpx; }
+	.pl-#{$n} { padding-left: #{$n}rpx; }
+	.px-#{$n} { padding-left: #{$n}rpx; padding-right: #{$n}rpx; }
+	.py-#{$n} { padding-top: #{$n}rpx; padding-bottom: #{$n}rpx; }
+}
+
+.m-auto { margin-left: auto; margin-right: auto; }
+.mt-auto { margin-top: auto; }
+
+/* ---------------- 圆角 / 阴影 / 边框 ---------------- */
+
+.rd-sm { border-radius: $rd-sm; }
+.rd-md { border-radius: $rd-md; }
+.rd-lg { border-radius: $rd-lg; }
+.rd-full { border-radius: $rd-full; }
+
+.shadow-card { box-shadow: $shadow-card; }
+.shadow-float { box-shadow: $shadow-float; }
+
+.bordered { border: 1rpx solid $border-color; }
+.no-border { border: none !important; }
+
+/* ---------------- 文本排版 ---------------- */
+
+.justify-text {
+	width: inherit;
+	white-space: normal;
+	word-break: break-all;
+	word-wrap: break-word;
+	text-align: justify;
+	text-justify: inter-ideograph;
+}
+
+.ellipsis {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.ellipsis-2 {
+	overflow: hidden;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	word-break: break-all;
+}
+
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+
+/* 1rpx 细线（小程序里比 1px 更稳） */
+.hairline-top { border-top: 1rpx solid $divider-color; }
+.hairline-bottom { border-bottom: 1rpx solid $divider-color; }
+
+/* ---------------- 布局补充 ---------------- */
+
+.flex-basis-auto { flex-basis: auto; }
+.flex1 { flex: 1; }
+.flex2 { flex: 2; }
+.flex3 { flex: 3; }
+
+.flex-v-center { display: flex; align-items: center; }
+.flex-h-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-col { display: flex; flex-direction: column; }
+
+.hidden { display: none; }
+.pointer { cursor: pointer; }
