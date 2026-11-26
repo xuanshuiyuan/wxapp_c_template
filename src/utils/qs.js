@@ -6,9 +6,9 @@ export function toQueryString(data) {
 		.filter(key => data[key] !== undefined && data[key] !== null)
 		.map(key => {
 			const value = data[key]
-			// 数组按 qs 风格序列化：key[0]=v1&key[1]=v2
+			// 数组统一序列化为逗号串（与后端约定一致）：key=v1,v2；禁止 key[]= / key[0]=
 			if (Array.isArray(value)) {
-				return value.map((item, index) => `${encodeURIComponent(key)}[${index}]=${encodeURIComponent(item)}`).join('&')
+				return `${encodeURIComponent(key)}=${encodeURIComponent(value.join(','))}`
 			}
 			return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
 		})

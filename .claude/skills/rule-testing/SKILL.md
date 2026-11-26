@@ -5,7 +5,6 @@ description: 在本项目编写或评审测试用例、引入测试环境（vite
 
 # rule-testing
 
-> 原 `.claude/rules/testing.md` 全量迁入本文件，**本文件是唯一权威**。
 
 ## 硬性禁令
 
@@ -36,7 +35,7 @@ description: 在本项目编写或评审测试用例、引入测试环境（vite
 vi.mock('@dcloudio/uni-app', () => ({ onLoad: vi.fn(), onReachBottom: vi.fn(), onPullDownRefresh: vi.fn() }));
 
 const fetcher = vi.fn().mockResolvedValue({ code: 0, data: { list: [{ id: 1 }], total: 1 } });
-const { items, reload } = useList(fetcher, { pageSize: 10, pageSizeKey: 'size' });
+const { items, reload } = useList(fetcher, { pageSize: 10 }); // 默认 page/page_size
 await reload();
 expect(fetcher).toHaveBeenCalledWith({ page: 1, size: 10 }, { toast: false });
 expect(items.value).toHaveLength(1);
@@ -57,7 +56,3 @@ expect(items.value).toHaveLength(1);
 - Java：JUnit 5 + Mockito。
 - Python：pytest + unittest.mock。
 - PHP：PHPUnit + Mockery。
-
-## 来源
-
-迁入自 `.claude/rules/testing.md`（全量），最后同步于 2026-09-10（rules 目录已删除）。

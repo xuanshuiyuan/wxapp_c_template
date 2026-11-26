@@ -58,15 +58,19 @@ UI 走 uview-plus + 自有 `app-*` 组件，请求层与后端模板 `go_project
 
 ---
 
-## 请求方式约定（硬约束）
+## 请求方式约定（硬约束，2026-11-26 定版：表单，不是 JSON）
 
-- 读接口：`curl.get(url, params)` —— GET + query
-- 写接口：`curl.post(url, data)` —— POST + `application/x-www-form-urlencoded`
+- **定版（2026-11-26）：写接口一律 `application/x-www-form-urlencoded`，不用 JSON**
+- 读接口：`curl.get(url, params, options)` —— GET + query
+- 写接口：`curl.post(url, data, options)` —— POST + `application/x-www-form-urlencoded`
 - 上传：`curl.upload(...)` —— multipart
-- 数组字段：逗号分隔字符串（`arr.join(',')`），禁止 `key[]=`
-- **新接口禁用 `curl.postJSON`**（后端统一 form；存量 JSON 接口不追溯改）
+- **api 方法签名统一 `(params|data, options)`，且 `options` 必须原样透传给 curl**（`useList` 的 `{ toast:false }`、页面的 `{ loading:true }` 都依赖它；`npm run check:api` 静态校验）
+- 响应统一 `{code,msg,data}`；无 `code` 的第三方裸响应必须显式传 `{ rawResponse: true }`，统一后端接口不得放宽
+- 数组字段：逗号分隔字符串（`arr.join(',')`），禁止 `key[]=`；GET/POST 序列化器已统一为逗号串
+- **`curl` 不提供 `postJSON`**：写接口统一 form，避免两种请求体混用
+- **除 `services/http/transport.js` 外，业务代码禁止直接 `uni.request` / `uni.uploadFile`**；`npm run check:http` 静态校验
 - 路径只从 `config/endpoints.js` 取，不带 `/v2`、不带前导斜杠
-- 登录/绑定类接口传 `{ authRetry: false }`，防止 40005 递归
+- 登录/绑定类接口传 `{ authRetry: false, guard: false }`，防止 40005 递归与全局守卫打断
 
 ### 与后端模板的契约（唯一真源：`go_project_template`）
 
@@ -79,7 +83,7 @@ UI 走 uview-plus + 自有 `app-*` 组件，请求层与后端模板 `go_project
 | 登录态 | 头 `token` + `userid`，TTL 7200s；40005 → 静默重登 → 原请求重放一次 |
 | 版本 | `edition=v1.0.0`（后端 `EditionList` 白名单，未登记值会被 fail-closed 拒绝） |
 | 分页 | `page` / `page_size`，列表在 `data.list`，总数 `data.total` |
-| 错误码 | 401xx 鉴权（40005 登录失效 / 40102 无权限）· 402xx 参数（40205 频控）· 50xxx 账号（50011 未绑手机）· 51xxx 业务段 · 6xxxx 系统 |
+| 错误码 | 40005 登录失效 · 401xx 鉴权（40101 未登录 / 40102 无权限）· 402xx 参数（40205 频控）· 50xxx 账号（50011 未绑手机）· 51xxx 业务段 · 6xxxx 系统 |
 | webview | 仅 query `access_token`，用 `<web-view>` 打开；链接由后端下发 |
 
 ---
@@ -122,7 +126,7 @@ main.js App.vue pages.json manifest.json
 | 性能 | `rule-performance` | 长列表、请求去重、包体积、重渲染 |
 
 非 rule 类：`project-dev`（开发主入口）、`design-preview`（贴设计稿出 HTML 预览）。
-`.claude/agents/` 与 `.claude/workflows/` 保留但不日常使用；实际工作是 project-dev + rule-skill。
+评审流程见 `.claude/project-meta/review-process.md`；架构说明见 `.claude/project-meta/architecture.md`。
 
 ---
 
@@ -141,7 +145,7 @@ main.js App.vue pages.json manifest.json
 
 ## 工程禁忌（真踩过、会直接出错）
 
-1. **`docs/` 与 `.codegraph/` 不进版本库**——别 `git add docs/`
+1. **`docs/` 与 `.codegraph/` 不进版本库**——别 `git add docs/`（两者都已进 `.gitignore`）
 2. **不要往 `manifest.json` 加 `navigateToMiniProgramAppIdList`**——字段已作废，devtools 报「无效的 app.json」
 3. **构建产物别搞混**：真机包只能来自 `dist/dev`；发布前最后一步必须是 `build:*`
 4. **禁 `calc(百分比 + px)` 做 transform**；`calc(...env(safe-area...))` 前必须有一行不含 env 的同属性回退（小程序兼容）

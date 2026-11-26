@@ -8,8 +8,10 @@
 	<view class="wv">
 		<web-view v-if="src" :src="src" />
 		<view v-else class="wv__empty">
-			<text class="t-h3">链接缺失</text>
-			<text class="t-desc wv__empty-desc">请从创建成功页或首页「文档预览」入口进入。</text>
+			<text class="t-h3">{{ invalid ? '链接无效' : '链接缺失' }}</text>
+			<text class="t-desc wv__empty-desc">
+				{{ invalid ? '只允许打开后端下发的同源文档链接。' : '请从创建成功页或首页「文档预览」入口进入。' }}
+			</text>
 		</view>
 	</view>
 </template>
@@ -18,12 +20,21 @@
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { safeDecode } from '@/utils/qs';
+import { isTrustedWebviewUrl } from '@/utils/url';
 
 const src = ref('');
+const invalid = ref(false);
 
 onLoad(query => {
 	// route.to 已 encode；部分端 onLoad 拿到未解码串，统一走 safeDecode
-	src.value = safeDecode((query && query.url) || '');
+	const raw = safeDecode((query && query.url) || '');
+	if (!raw) return;
+	// 安全边界：只允许后端同源文档链接；第三方域名 / javascript: / data: 一律拒绝
+	if (!isTrustedWebviewUrl(raw)) {
+		invalid.value = true;
+		return;
+	}
+	src.value = raw;
 });
 </script>
 

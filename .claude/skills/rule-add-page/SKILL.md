@@ -9,7 +9,7 @@ description: 在本项目新增页面、新界面、新业务模块页，或要�
 
 > **路径口径**（2026-09-20 起工程为 uni-app CLI + `src/` 结构）：本文件里不带前缀的模块路径一律相对 `src/`（`pages/` 即 `src/pages/`，`@/` 别名 = `src/`）；仓库根只放构建链文件（`package.json` `vite.config.js` `index.html` `.env*`）。`pages.json` = `src/pages.json`，`docs/` 与 `.claude/` 在仓库根、不加前缀。
 
-在本项目「加一个页面」= 动 4 个地方：`api/<domain>.js`（取数）→ `pages/**.vue`（渲染）→ `pages.json`（注册）→ 必要时 `config/dict.js`（枚举）。页面文件本身**照本文件下面的骨架现写**——原模板页 `pages/template/list.vue` 与示例页 `pages/index/index.vue` 已于 2026-09-20 随脚手架清理**全部删除**，不再有可 `cp` 的文件；骨架与当前 `useList` / `app-list-state` 签名逐字核对过，写法可参照现役页 `pages/home/index.vue`。
+在本项目「加一个页面」= 动 4 个地方：`api/<domain>.js`（取数）→ `pages/**.vue`（渲染）→ `pages.json`（注册）→ 必要时 `config/dict.js`（枚举）。页面文件本身**照本文件下面的骨架现写**——没有可直接 `cp` 的模板页；骨架与当前 `useList` / `app-list-state` 签名逐字核对过，写法可参照现役页 `pages/home/index.vue`。
 
 ## 流程（列表页，最常做的一种）
 
@@ -20,7 +20,7 @@ description: 在本项目新增页面、新界面、新业务模块页，或要�
    // api/xxx.js —— export const xxxApi = { ... }
    list(params, options) { return curl.get(ENDPOINT_XXX_LIST, params, options) }
    ```
-2. **建页面文件** —— 按本文件下面的列表页骨架**现写** `pages/<模块>/index.vue`（现役页目录形态统一是「一屏一目录 + `index.vue`」，如 `pages/home/index.vue`；**无模板可 `cp`**，`pages/template/list.vue` 已删除）。
+2. **建页面文件** —— 按本文件下面的列表页骨架**现写** `pages/<模块>/index.vue`（现役页目录形态统一是「一屏一目录 + `index.vue`」，如 `pages/home/index.vue`；**无模板可 `cp`**）。
 3. **改三处**：
    - `useList` 第一个参数 → 你的接口方法（api 方法不用 `this`，可直接当 fetcher 传）；
    - `params()` → 你的筛选字段；
@@ -250,7 +250,3 @@ async function submit() {
 - 写操作成功后刷新：`await` 接口再 `reload()`；后端回传字段不全，**不要做乐观更新**。
 - **`onShow` 里是否无条件重拉列表要按数据量权衡**：模板 demo 首页为了让「创建后返回立刻可见」故意每次 onShow 重拉（数据少）；列表大时改成子页 `mark` dirty、列表 `take` 一次，或单调修订号（见 `rule-performance`）。
 - 骨架的可信度级别：列表 / 表单骨架按当前源码签名逐字核对（`useList` 返回值 / `app-list-state` props / `u-form` 三坑），落地后由双端 `npm run verify:mp-weixin && npm run verify:h5` 把编译关，但**不等于真机跑通过**；首次落地先真机验一遍再当模板复用。四态渲染的现役实证是 `pages/home/index.vue` 里的 `<app-list-state>` 用法（数据走 `useList`）。
-
-## 来源
-
-提炼自 `composables/useList.js` / `usePullRefresh.js`、`components/app-list-state` / `app-refresher` 与 `pages/home`、`packages/demo/create` 的现役实现。

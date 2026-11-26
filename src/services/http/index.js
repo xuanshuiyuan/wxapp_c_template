@@ -1,6 +1,7 @@
 // ---------------------------------------------------------------------------
 // http 层唯一出口：api/ 里只 import 这个文件。
-// 约定：POST 默认 x-www-form-urlencoded（后端历史接口格式），JSON 接口用 postJSON。
+// 约定：写接口统一 POST + x-www-form-urlencoded；上传走 multipart。
+// 不提供 postJSON —— 后端统一 ReadForm 解析表单，避免同一项目两种请求体。
 // ---------------------------------------------------------------------------
 
 import { request, registerAuthHandler, DEFAULT_TIMEOUT, TRANSPORT_UPLOAD } from './request';
@@ -30,11 +31,6 @@ export const curl = {
 			contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
 			...options
 		});
-	},
-
-	/** POST：JSON 格式 */
-	postJSON(url, data, options = {}) {
-		return request({ url, method: 'POST', data: data || {}, contentType: 'application/json', ...options });
 	},
 
 	/**

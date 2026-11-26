@@ -23,3 +23,9 @@ Thumbs.db
 *.swp
 # 项目文档与设计预览（本机留存，不进仓库）
 /docs/
+
+# CodeGraph 本机索引
+.codegraph/
+
+# Claude Code 本机设置（可能含密钥/个人偏好）
+.claude/settings.local.json

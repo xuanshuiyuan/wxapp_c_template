@@ -13,7 +13,6 @@ description: 本项目的开发工作流主入口——开发新功能、修复 
 ## 调用后先了解背景
 
 1. 读 `.claude/project-meta/index.md`（模块清单 + 模块复杂度元数据）和 `skills-index.md`（可引用的 rule-skill 清单）
-2. 如果项目根存在 `CLAUDE.md`、`.claude/memory/`、`.claude/rules/`，顺带扫一眼相关部分作为补充背景，不是必需依赖
 
 ## 流程
 
@@ -22,7 +21,7 @@ description: 本项目的开发工作流主入口——开发新功能、修复 
 
 ### 2. 确定版本号
 
-以 `.claude/CLAUDE.md` 的「当前版本」为基线（`versions/` 里 v1.0.20 ~ v1.0.22 因 2026-11-02 的轻量流程断档，2026-11-12 起恢复逐版建档），结合步骤 1 的变更类型建议下一个版本号。
+以 `.claude/project-meta/versions/` 里现有最大版本为基线，结合步骤 1 的变更类型建议下一个版本号。
 
 **版本号格式**：`v<major>.<minor>.<patch>`（如 v1.0.1）
 - `major`：大版本，不兼容的 API 变更或重大重构
@@ -30,7 +29,7 @@ description: 本项目的开发工作流主入口——开发新功能、修复 
 - `patch`：bug 修复、文档更新、小优化
 
 **确定流程**：
-1. 读取 CLAUDE.md 的当前版本号（如 v1.0.22）
+1. 读取 `.claude/project-meta/versions/` 的现有最大版本号
 2. 根据步骤 1 的变更类型建议下一个版本号（如 bug 修复 → v1.2.4，新功能 → v1.3.0）
 3. **必须询问用户确认**：「本次变更类型为 X，版本号建议 vX.Y.Z，是否同意？或指定其他版本号」
 4. 用户确认后使用该版本号
@@ -161,7 +160,7 @@ npm run verify:mp-weixin && npm run verify:h5
 > **完整流程（角色 / 分级 / 报告模板 / `.last-sync` 基线处理）以
 > `.claude/project-meta/review-process.md` 为唯一真源**；本节只保留触发与最小步骤，两者冲突时以该文件为准。
 >
-> `.claude/agents/reviewer.md` 的口径：**评审若执行，reviewer 必须是最后一步**。角色：**代码窗口**（本窗口）+ **评审窗口**（用户在本仓另开的独立会话）。评审窗口只审不改；代码窗口不自评。
+> 评审口径见 `.claude/project-meta/review-process.md`：**评审若执行，必须是最后一步**。角色：**代码窗口**（本窗口）+ **评审窗口**（用户在本仓另开的独立会话）。评审窗口只审不改；代码窗口不自评。
 > **用户交互规则（2026-11-24 用户定版）：提问只发生在代码窗口，且只有三种——① 是否开始评审；② 修复后是否复评；③ 评审结果里需要用户定口径的条目。评审窗口不直接问用户；纯技术性发送（首轮派发 / 修复指令 / 复评请求 / 通过回执）都不问，直接发。**
 > **硬规则（定死，2026-11-24）：首次评审必须在用户新开的独立窗口里做**——禁止代码窗口自评、禁止复用其它已开会话或旧版本 / 上一轮留下的评审窗口。复评留在本版本的评审窗口；窗口关闭后复评必须重新新开。
 
@@ -172,12 +171,12 @@ npm run verify:mp-weixin && npm run verify:h5
 1. **问 ①**：「要做评审吗？要做请在本仓（wxapp_c_template）新开一个 Claude 窗口，开好回我一声」。不做 → `versions/vN/CHANGELOG.md` 记 `评审：跳过（用户确认）`，进步骤 13。
 2. 用户开好后，用 `ListAgents` + `SendMessage` 直接把指令发过去（本机找不到会话 → 回退成一行让用户手工粘贴）：
    - 目标 = 本仓、用户本次新开的评审会话；排除当前会话自己与任何旧评审会话；确认不了是不是刚新开的，先问用户
-   - 指令 = `读 <本仓绝对路径>/.claude/skills/project-dev/SKILL.md 步骤 12.5、versions/vN/requirement.md、versions/vN/CHANGELOG.md，对 <base>..<head> 按 .claude/agents/reviewer.md 的口径评审，只出报告不改代码；发现的问题全部发回代码窗口 <本会话名>，标注代码级/需用户定`
+   - 指令 = `读 <本仓绝对路径>/.claude/skills/project-dev/SKILL.md 步骤 12.5、versions/vN/requirement.md、versions/vN/CHANGELOG.md，对 <base>..<head> 按 .claude/project-meta/review-process.md 的口径评审，只出报告不改代码；发现的问题全部发回代码窗口 <本会话名>，标注代码级/需用户定`
    - `<base>` = `.claude/project-meta/.last-sync` 的 hash，`<head>` = 当前 HEAD（**评审 / 复评前代码窗口须先提交**；未提交改动不在范围内）
 
 **评审窗口侧（每轮，全程不问用户）**
 
-3. 按 `.claude/agents/reviewer.md` 审 `<base>..<head>`；报告写 `versions/vN/review.md`（复评 `review-r2.md`、`review-r3.md`…），按**阻断 / 建议**分级 + `文件:行号`，每条再标 **`代码级`** / **`需用户定`**。
+3. 按 `.claude/project-meta/review-process.md` 审 `<base>..<head>`；报告写 `versions/vN/review.md`（复评 `review-r2.md`、`review-r3.md`…），按**阻断 / 建议**分级 + `文件:行号`，每条再标 **`代码级`** / **`需用户定`**。
 4. **所有条目一次性 SendMessage 发回代码窗口**（编号 + 文件:行号 + 期望改法），不贴整份需求、不直接问用户；判断不了的不要猜，标 `需用户定` 发回。
 5. 通过（无阻断项）→ 直接回发「评审通过（review.md）」给代码窗口。
 

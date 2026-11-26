@@ -34,6 +34,8 @@
 							maxlength="64"
 							placeholder="1-64 个字符，同用户下不可重名"
 							placeholder-class="create__ph"
+							confirm-type="done"
+							@confirm="onSubmit"
 						/>
 					</view>
 					<view class="create__field">
@@ -58,9 +60,11 @@
 
 <script setup>
 import { reactive, ref } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import { demoApi } from '@/api';
 import { saveLastCreated } from '@/store/demo';
-import { route, DEMO_WEBVIEW_PAGE, HOME_PAGE } from '@/services/route';
+import { ensureLogin } from '@/services/session';
+import { requireLogin, route, DEMO_WEBVIEW_PAGE, HOME_PAGE } from '@/services/route';
 import { toast, withLoading } from '@/services/toast';
 import { absoluteUrl } from '@/utils/url';
 import { isApiError } from '@/services/http';
@@ -68,6 +72,11 @@ import { isApiError } from '@/services/http';
 const form = reactive({ name: '', remark: '' });
 const submitting = ref(false);
 const created = ref(null);
+
+// 深链/分享直接进入本页时也要先过登录门槛；否则用户填完表单提交才触发 40101
+onShow(async () => {
+	if (!(await ensureLogin())) requireLogin();
+});
 
 async function onSubmit() {
 	if (submitting.value) return; // 双保险：按钮 in-flight + withLoading 托管
@@ -80,9 +89,11 @@ async function onSubmit() {
 	try {
 		await withLoading(async () => {
 			const body = await demoApi.create({ name, remark: String(form.remark || '').trim() });
-			created.value = body.data || null;
-			// 首页据此展示「文档预览」入口（列表接口不返回 doc_preview_url）
-			saveLastCreated(created.value);
+			const data = body.data || null;
+			created.value = data;
+			// create 响应只有 { id, doc_preview_url }，name 是本次提交的入参；
+			// 首页「最近创建：」要显示名称，必须一起存
+			if (data) saveLastCreated({ ...data, name });
 		});
 		toast('创建成功', 'success');
 	} catch (e) {

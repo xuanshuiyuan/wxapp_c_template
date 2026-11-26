@@ -30,11 +30,11 @@ description: 在本项目（uni-app + Vue3 + uview-plus 多端脚手架）新增
 | `pages/` `packages/` | **只有「调接口 + 渲染 + 反馈」**，删掉它不影响别处复用 | 主包 3 页 `pages/<模块>/index.vue`（home/login/mine）＋ 分包 `packages/demo/{create,webview}` |
 | `composables/` | 把**一个能力**封成 hook，含加载/错误/空态三态 | `useList` `useModal` `usePullRefresh` |
 | `api/` | **业务域名词 → HTTP**，一个域一个文件，URL 只引 `config/endpoints.js` 常量 | `demo.js`；新业务照此新增 `api/<域>.js` |
-| `services/` | 所有**有副作用**的能力；**端差异只允许出现在这一层（＋ `config/env.js`）** | `http/` `session` `storage` `toast` `route` `platform` `guards`（全局业务码守卫，`main.js` 副作用 import）、`location`（跨端定位 gcj02＋会话缓存＋单飞）、`fieldEditor`（打开分包编辑页并 Promise 收回传值） |
+| `services/` | 所有**有副作用**的能力；**端差异只允许出现在这一层（＋ `config/env.js`）** | `http/` `session` `storage` `toast` `route` `platform` `guards`（全局业务码守卫，`main.js` 副作用 import）、`location`（跨端定位 gcj02＋会话缓存＋单飞） |
 | `store/` | **跨页响应式状态**（零依赖 reactive，不上 Vuex/Pinia） | `user` `modal` `loading` `toast` `demo` |
 | `config/` | 环境/常量/字典/JS 侧色值/接口登记表，**无逻辑无副作用** | `env` `app` `dict` `theme` `endpoints`；业务字典按域拆 `config/dict/<域>.js` 后汇总 |
 | `utils/` | **纯函数**：不 import services、不碰 uni API、不发请求 | `qs` `date` `oss` `text` `number` `url` |
-| `components/` | **通用**组件：easycom 自动注册，目录名=文件名=标签名；只放跨页 `app-*` | 现有 7 个：`app-modal` `app-skeleton` `app-list-state` `app-loading` `app-navbar` `app-refresher` `app-score-ring` |
+| `components/` | **通用**组件：easycom 自动注册，目录名=文件名=标签名；只放跨页 `app-*` | 现有 10 个：`app-modal` `app-toast` `app-loading` `app-skeleton` `app-list-state` `app-navbar` `app-refresher` `app-cta` `app-form-row` `app-option-sheet` |
 | `pages/<page>/components/` | **页面专用**组件：不在 easycom 扫描域，页面显式 import；第二个页面要用时再提升到 `components/`（分包页同理：`packages/<模块>/<页>/components/`） | 模板暂无页面专用组件；新建时按此目录形态 |
 | `common/css/` | 全局样式三层：`theme.scss`(token 真源) `base.scss`(原子类) `main.css`(ColorUI) | 见 `rule-style-css` |
 | `styles/` | 版式块 `scaffold.scss`（`.card` `.btn` `.list-item` `.hud-page*` `.hud-tile*` …） | 见 `rule-style-css` |
@@ -54,7 +54,7 @@ description: 在本项目（uni-app + Vue3 + uview-plus 多端脚手架）新增
 - **端差异只经 `services/platform.js` 暴露的能力标志消费**（`isMP/isH5/isApp`、`getLayout()`、`canScan/canInlineScan/SCAN_MODE`）；页面与业务组件不自己判端、不写条件编译。
 - 唯一的环 `http ↔ session` 用「注册处理器」打破：`session.js` 末尾 `registerAuthHandler(relogin)`，`main.js` 副作用 import 它。**别去动这条线**，详见 `rule-auth-state`。
 - `guards.js`（全局业务码守卫）沿用同一条注册路子：机制在 `services/http/guard.js`，`services/guards.js` 登记动作，`main.js` 第二条副作用 import 它——删掉后那些码只会当普通业务错误提示，同样**静默失效**。
-- 接口 URL 统一登记在 `config/endpoints.js`（全项目唯一登记表，原 `services/http/endpoints.js` 已并入删除）—— config 在最底层，`services/session` 与 `api/` 都向下引它，不会形成 `api → http → session → api` 环。
+- 接口 URL 统一登记在 `config/endpoints.js`（全项目唯一登记表）—— config 在最底层，`services/session` 与 `api/` 都向下引它，不会形成 `api → http → session → api` 环。
 
 ## 页面层禁止清单（全项目唯一一份，10 条）
 
@@ -76,7 +76,7 @@ description: 在本项目（uni-app + Vue3 + uview-plus 多端脚手架）新增
 | 想做的事 | 改哪里 |
 |---|---|
 | 加一个接口方法 | `api/<domain>.js` 加方法；新域再去 `api/index.js` 加一行 `export` |
-| 加一个页面 | 按 `rule-add-page` 的内置骨架**现写** `pages/<模块>/index.vue`（原 `pages/template/list.vue` 已删除，骨架与当前 `useList` 签名一致）＋ `pages.json` 注册；列表四态照 `pages/home/index.vue` 里 `<app-list-state>` 的真实用法 |
+| 加一个页面 | 按 `rule-add-page` 的内置骨架**现写** `pages/<模块>/index.vue`（骨架与当前 `useList` 签名一致）＋ `pages.json` 注册；列表四态照 `pages/home/index.vue` 里 `<app-list-state>` 的真实用法 |
 | 按模块分包 | 建 `packages/<模块>/<页>/index.vue`（分包页统一带 `/index` 目录形态）＋ `pages.json` 的 `subPackages`；现有 `packages/demo` 两页 |
 | 换后端分页字段名 | `useList` 的 `pageNumKey` / `pageSizeKey`（默认已是 `page` / `page_size`，与现契约吻合，通常不用传），**不要改 useList 源码** |
 | 后端返回结构不同 | `useList` 传自定义 `pick` |
@@ -87,7 +87,7 @@ description: 在本项目（uni-app + Vue3 + uview-plus 多端脚手架）新增
 | 加一档间距/字号 | `theme.scss` 加变量 → `base.scss` 的 `$spacing-steps` 加值 |
 | 加一个通用组件 | `components/<name>/<name>.vue`（见 `rule-ui-components`） |
 | 加一个页面专用组件 | `pages/<page>/components/<name>/<name>.vue`（分包页为 `packages/<模块>/<页>/components/`）＋ 页面显式 import（不进 easycom）；现码两种形态都有：目录式与平铺单文件式 |
-| 加/换一个 tab 页（tabBar **已启用**：5 个 tab 页） | `static/tabbar/` 放一对图标（常态 + `-active`）→ `pages.json` 的 `tabBar.list` 加项 → 同步 `services/route.js` 的 `TAB_PAGES`（漏同步则 `route.navigate` 不会自动走 `switchTab`） |
+| 加/换一个 tab 页（tabBar **已启用**：首页 / 我的 两个 tab 页） | `static/tabbar/` 放一对图标（常态 + `-active`）→ `pages.json` 的 `tabBar.list` 加项 → 同步 `services/route.js` 的 `TAB_PAGES`（漏同步则 `route.to` 不会自动走 `switchTab`） |
 | 加跨页响应式状态 | 建 `store/<name>.js` + 在 `store/index.js` re-export |
 
 ## 本文件独有的补充
@@ -100,7 +100,7 @@ description: 在本项目（uni-app + Vue3 + uview-plus 多端脚手架）新增
 
 ## 硬性禁令（MUST / MUST NOT）
 
-> 原 `rules/scaffold-musts.md` §1 与 `rules/architecture.md` 总纲迁入，**本节是唯一权威**；收录标准：不看代码即可判定 + 违反代价大 + 换项目仍成立。
+> 历史规则已并入本文件，**本节是唯一权威**；收录标准：不看代码即可判定 + 违反代价大 + 换项目仍成立。
 
 ### 分层与归位
 - 依赖只能单向向下：`pages|packages → composables → api → services → config|utils`；禁止反向调用、跨层调用、同级互相 import 成环。
@@ -124,9 +124,3 @@ description: 在本项目（uni-app + Vue3 + uview-plus 多端脚手架）新增
 - Repository / DAO 层只做数据存取，禁止业务逻辑；第三方服务必须封装，禁止业务代码直调。
 - 禁止循环依赖；公共能力下沉到基础设施层或独立工具包。
 - 模块划分判据：**能否共用一份业务逻辑描述** —— 能则是一个模块，只有各端完全独立设计两套规则时才拆成不同模块。
-
-## 来源
-
-提炼自 `docs/ARCHITECTURE.md`（§1/§2/§7）+ 实际目录结构核对；2026-09-10 并入原 `.claude/rules/scaffold-musts.md` §1 §2 与 `rules/architecture.md` 全部内容（rules 目录已删除）。文档更新后重跑 `project-skill-manager` 的 RULES-TO-SKILLS 流程同步。
-
-**最后同步于 2026-09-22**：CLI + `src/` 口径全量校正（目录职责表、落点速查、tabBar 与环境切换按现码核对）；模板页已删，改指现写骨架与现役页；补 `npm run verify:*` 双端编译验证；`#ifdef` 白名单按 obd 页收敛后收紧为三处（`rule-multiplatform` 由另一会话同步，本文件只改白名单表述）。

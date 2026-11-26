@@ -1,14 +1,13 @@
 // ---------------------------------------------------------------------------
 // demo 示例模块接口（与后端模板 go_project_template 的 demo 模块一一对应）。
 //
-// 全链路参考实现：登录 stub → 列表分页 → 创建（返回文档预览链接）→ 删除。
+// 全链路参考实现：列表分页 → 创建（返回文档预览链接）→ 删除；登录在 services/session.js。
 // 新增真实业务域时照这个文件抄：路径只从 config/endpoints.js 取，
 // 页面不直接 import curl，也不写 URL 字符串。
 // ---------------------------------------------------------------------------
 
 import { curl } from '@/services/http';
 import {
-	ENDPOINT_DEMO_LOGIN,
 	ENDPOINT_DEMO_LIST,
 	ENDPOINT_DEMO_CREATE,
 	ENDPOINT_DEMO_DELETE
@@ -17,32 +16,30 @@ import { mdHmText } from '@/utils/date';
 
 export const demoApi = {
 	/**
-	 * demo 登录 stub（真实项目替换为微信 code2session / 手机号验证码）
-	 * @param {number|string} userId
-	 */
-	login(userId) {
-		return curl.post(ENDPOINT_DEMO_LOGIN, { user_id: userId }, { authRetry: false, toast: false });
-	},
-
-	/**
 	 * 分页列表：GET page/page_size，响应 data = { list, total }
 	 * @param {object} params { page, page_size }
+	 * @param {object} [options] 原样透传给 curl（useList 的 { toast:false } 依赖它）
 	 */
-	list(params) {
-		return curl.get(ENDPOINT_DEMO_LIST, params);
+	list(params, options) {
+		return curl.get(ENDPOINT_DEMO_LIST, params, options);
 	},
 
 	/**
 	 * 创建记录：POST form，响应 data = { id, doc_preview_url }
 	 * @param {object} data { name, remark }
+	 * @param {object} [options] 原样透传给 curl
 	 */
-	create(data) {
-		return curl.post(ENDPOINT_DEMO_CREATE, data);
+	create(data, options) {
+		return curl.post(ENDPOINT_DEMO_CREATE, data, options);
 	},
 
-	/** 软删：POST form { id } */
-	remove(id) {
-		return curl.post(ENDPOINT_DEMO_DELETE, { id });
+	/**
+	 * 软删：POST form { id }
+	 * @param {number|string} id
+	 * @param {object} [options] 原样透传给 curl
+	 */
+	remove(id, options) {
+		return curl.post(ENDPOINT_DEMO_DELETE, { id }, options);
 	}
 };
 

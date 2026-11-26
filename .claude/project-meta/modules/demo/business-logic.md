@@ -18,7 +18,7 @@
 ## 创建 / 删除
 <!-- block: demo-create-delete | last-updated: v1.0.0 -->
 创建：`POST /web/demo/create`（form: `name<=64`, `remark<=255`）→ `{id, doc_preview_url}`。
-同名（同用户）回 `51002`，由请求层默认 toast；创建成功后结果写 `store/demo.lastCreated`（列表不返回预览链接）。
+同名（同用户）回 `51002`，由请求层默认 toast；创建成功后结果写 `store/demo.js` 的 `lastCreated`（列表不返回预览链接）。
 删除：`POST /web/demo/delete`（form: `id`）软删；二次确认用 `useModal.confirm`。
 删的正好是 `lastCreated` 那条时一并清掉，避免预览入口点进去 404。
 

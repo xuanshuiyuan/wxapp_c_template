@@ -8,6 +8,7 @@
 // ---------------------------------------------------------------------------
 
 import { rootPath } from '@/config/env';
+import { routeVersion } from '@/config/app';
 
 /**
  * 相对路径 → 绝对地址
@@ -20,6 +21,26 @@ export function absoluteUrl(path) {
 	if (/^https?:\/\//.test(url)) return url;
 	const host = String(rootPath || '').replace(/\/+$/, '');
 	return host + (url.startsWith('/') ? url : `/${url}`);
+}
+
+/**
+ * 是否允许交给 <web-view> 的地址（模板安全边界）。
+ * - 只允许 http(s) 绝对地址，或后端同源的 `/v2/webview/...` 相对地址；
+ * - 绝对地址的 host 必须与 rootPath 同源（后端下发的文档链接就是同源）；
+ * - 明确拒绝 javascript: / data: / 任意第三方域名。
+ * @param {string} url
+ * @returns {boolean}
+ */
+export function isTrustedWebviewUrl(url) {
+	const value = String(url || '').trim();
+	if (!value) return false;
+	// H5 同域（rootPath 为空）时后端链接是 /v2/webview/... 相对地址
+	if (new RegExp(`^/${routeVersion}/webview/`, 'i').test(value)) return true;
+	if (!/^https?:\/\//i.test(value)) return false;
+	const target = /^https?:\/\/([^/?#]+)/i.exec(value);
+	const base = /^https?:\/\/([^/?#]+)/i.exec(String(rootPath || ''));
+	if (!target || !base) return false;
+	return target[1].toLowerCase() === base[1].toLowerCase();
 }
 
 export default absoluteUrl;

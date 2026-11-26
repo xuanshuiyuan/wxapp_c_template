@@ -73,19 +73,19 @@ onUnload(() => resetLoading());      // 页面卸载兜底：计数漏减会让�
 ### 3) 路由：路径集中，空栈有兜底
 
 ```js
-import { route, requireLogin, HOME_PAGE, TAB_PAGES, VALUATION_PAGE,
-         VALUATION_RESULT_PAGE, BIND_CAR_PAGE, OBD_PAGE } from '@/services/route';
+import { route, requireLogin, HOME_PAGE, TAB_PAGES, MINE_PAGE,
+         DEMO_CREATE_PAGE, DEMO_WEBVIEW_PAGE } from '@/services/route';
 
-route.to(VALUATION_RESULT_PAGE, { unique_id });  // 压栈；命中 TAB_PAGES 自动改用 switchTab（路径一律引 route.js 常量）
-route.redirect(BIND_CAR_PAGE, { unique_id });    // 关闭当前页再跳
-route.tab(HOME_PAGE);                            // 显式回 tabBar 页（也可直接 route.to(VALUATION_PAGE)，会命中 TAB_PAGES 自动 switchTab）
-route.relaunch();                                // 关闭所有页面（默认 HOME_PAGE）：登录失效/切身份/绑车盒成功回首页
+route.to(DEMO_CREATE_PAGE);                      // 压栈；命中 TAB_PAGES 自动改用 switchTab（路径一律引 route.js 常量）
+route.redirect(DEMO_WEBVIEW_PAGE, { url });      // 关闭当前页再跳
+route.tab(MINE_PAGE);                            // 显式回 tabBar 页（也可 route.to(HOME_PAGE)，会命中 TAB_PAGES 自动 switchTab）
+route.relaunch();                                // 关闭所有页面（默认 HOME_PAGE）：登录失效 / 切换身份 / 完成流程回首页
 route.back();                                    // 返回；页面栈为空时（H5 直开链接、分享落地页）回落首页，不白屏
 route.back(MINE_PAGE);                          // 自定义兜底页
 
 if (!requireLogin()) return;                     // 未登录 → route.relaunch(LOGIN_PAGE)；requireLogin({ silent: true }) 只判不跳
 ```
-- 路径**前导斜杠可省**（内部 `normalize()` 会补），query 传对象即可（内部走 `toQueryString`）；五个方法 `to / redirect / tab / relaunch / back` 都接受第三个 `options` 透传给 uni API。
+- 路径**前导斜杠可省**（内部 `normalize()` 会补），query 传对象即可（内部走 `toQueryString`）；七个方法 `to / redirect / tab / relaunch / back / backTo / toMiniProgram` 中前六个接受第三个 `options` 透传给 uni API。
 - **`TAB_PAGES`** = `[HOME_PAGE, MINE_PAGE]`，与 `pages.json` 的 `tabBar.list` 一一对应；新增/删除 tab 必须两处同步，否则 `route.to` 对 tab 页用 `navigateTo` 失败。
 
 **跨页路径常量现状**（`services/route.js` 是唯一登记表，**新增页面跳转必须在此登记常量，页面里禁止写路径字面量**）：
@@ -107,7 +107,7 @@ if (!requireLogin()) return;                     // 未登录 → route.relaunch
 | 弹窗渲染 | `components/app-modal/app-modal.vue` | 每页放一次 `<app-modal />` |
 | loading 渲染 | `components/app-loading/app-loading.vue` | 每页放一次全局模式 `<app-loading />`（按钮发请求的页要 `:mask="true"`） |
 | 轻提示/loading | `services/toast.js` | 引用计数与原生降级在这里 |
-| 跳转 | `services/route.js` | 五个方法 + `requireLogin` + **全部跨页路径常量**（`HOME_PAGE`/`TAB_PAGES`/`LOGIN_PAGE`/分包四页…）都在这一个文件 |
+| 跳转 | `services/route.js` | 七个方法 + `requireLogin` + **全部跨页路径常量**（`HOME_PAGE`/`TAB_PAGES`/`LOGIN_PAGE`/`DEMO_*` 分包页…）都在这一个文件 |
 
 新加一类需要跨页协作的 UI 状态（比如全局通知栏）：`store/<name>.js` 写状态机 + `components/<name>/` 写渲染 + `composables/use<Name>.js` 做调用入口 —— 照 `modal` 这三件套的形态。
 
@@ -131,10 +131,6 @@ if (!requireLogin()) return;                     // 未登录 → route.relaunch
 - **按钮点击请求 = 双保险**（用户定 2026-09-21）：按钮/热区点击发起的接口请求必须同时有 ① 请求层 `{ loading: true }` 托管全局 loading（请求侧口径见 `rule-api-request`）② 按钮自身 in-flight 态——进行中标志防重入 + 转圈/换态反馈，两个状态同一调用点同起同收（finally 归位）。走请求托管的页面一律挂 `<app-loading :mask="true" />`：暗遮罩明示「进行中不可操作」；透明层虽也挡误点，但用户不知道页面被锁（P1/P3/P4 三页已按此收口，新页照办）。
 - 确认类弹窗保持 `close: false`（必须选按钮，防误触吞掉确认）；只有纯信息展示才开 `close: true`。
 - 「提示后再离开」必须 `await toast(...)` 再 `route.back()`。
-- tabBar 已启用（五个 tab），增删 tab 页必须同步维护 `services/route.js` 的 `TAB_PAGES`（否则 `route.to` 对 tab 页用错 API）。
-- **多步流程的「完成页」必须 `reLaunch` 清栈，不能用 `redirect`**（2026-10-29 v1.0.19 实证）：`redirect` 只换掉当前页，链路里更早的中间页（如 S4 车牌查车型 → S5 选配置 → S3 表单 → 成功页）仍在栈里，从成功页返回就能回到中间页继续下一步（用户实报「发布成功了还能一直返回」）。判据：**从完成页返回，不应能到达任何「还能再提交/再走一遍」的页面**。
-- **单字段独立页可直接用页内 `<input>`**（2026-10-29 改价页定）：被禁的是**弹框 / 底部抽屉里的输入**（键盘顶起、样式不可控）；一张整页、且只有这一个输入项时（如改价）直接页内输入 + 进页自动弹键盘，不再二次跳 `field-editor`。多字段表单仍一律跳页。页内 input 挂 `confirm-type="done"` + `@confirm` 提交（**多行 textarea 不挂**，回车留给换行）；⚠️ `confirm-type` 仅 `type="text"` 生效、iOS 数字键盘无回车键——自动 focus + `footer-bar` 固定底栏的组合必须真机验提交按钮不被键盘压住。判据全文见 `rule-ui-components` 硬性禁令。
-
-## 来源
-
-提炼自 `docs/ARCHITECTURE.md` §2（composables/store/toast/route）+ `composables/useModal.js`、`services/{toast,route}.js`、`store/modal.js`、`components/app-modal/app-modal.vue` 的真实默认值与签名核对；2026-09-10 并入原 `.claude/rules/scaffold-musts.md` §5（rules 目录已删除）。2026-09-22 按代码全量重校：`pushModal` 直用的豁免名单补 `services/session.js`（原只写 guards.js）；`route.js` 补跨页常量现状表并清掉已删除的示例路径（`pages/index/index`、`pages/template/list`）；`TAB_PAGES` 由「空数组」改正为已启用五个 tab；登录页口径由「无独立登录页」改正为 `requireLogin → relaunch(LOGIN_PAGE)` 并补绑手机门槛分工；`<app-loading />` 画面口径改正（`LOADING_IMAGE` 现为空串 → 默认纯 CSS 转圈）与局部/全局双实例共存说明；路径补 `src/` 总说明。**2026-11-25 补键盘口径**：页内 input 挂 `confirm-type` + `@confirm`，iOS 数字键盘无回车键 + 固定底栏为真机风险组合。
+- tabBar 已启用（两个 tab：首页/我的），增删 tab 页必须同步维护 `services/route.js` 的 `TAB_PAGES` 与 `pages.json`（否则 `route.to` 对 tab 页用错 API）。
+- **多步流程的「完成页」必须 `reLaunch` 清栈，不能用 `redirect`**（2026-10-29 v1.0.19 实证）：`redirect` 只换掉当前页，链路里更早的中间页（选择 → 填写 → 确认 → 成功页）仍在栈里，从成功页返回就能回到中间页继续下一步。判据：**从完成页返回，不应能到达任何「还能再提交/再走一遍」的页面**。
+- **单字段独立页可直接用页内 `<input>`**（单字段页定）：被禁的是**弹框 / 底部抽屉里的输入**（键盘顶起、样式不可控）；一张整页、且只有这一个输入项时直接页内输入 + 进页自动弹键盘，不再二次跳独立编辑页。多字段表单仍一律走整屏页。页内 input 挂 `confirm-type="done"` + `@confirm` 提交（**多行 textarea 不挂**，回车留给换行）；⚠️ `confirm-type` 仅 `type="text"` 生效、iOS 数字键盘无回车键——自动 focus + `footer-bar` 固定底栏的组合必须真机验提交按钮不被键盘压住。判据全文见 `rule-ui-components` 硬性禁令。

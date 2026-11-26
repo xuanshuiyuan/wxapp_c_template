@@ -22,7 +22,7 @@ description: 在本项目写界面 UI、要选组件（按钮/输入/弹窗/列�
               "^u-([^-].*)": "@/uni_modules/uview-plus/components/u-$1/u-$1.vue" } }
 ```
 - `<u-xxx>` / `<up-xxx>` 直接写，**不需要 import**；`main.js` 里也不再 `app.component()`。
-- 项目自有组件同理自动注册（`components/app-xxx/app-xxx.vue` 目录名 = 标签名）：`<app-modal />` `<app-skeleton />` `<app-list-state />` `<app-loading />` `<app-navbar />` `<app-refresher />` `<app-score-ring />` `<app-plate-keyboard />` `<app-safety-band />`。
+- 项目自有组件同理自动注册（`components/<name>/<name>.vue` 目录名 = 标签名）：`<app-modal />` `<app-toast />` `<app-loading />` `<app-skeleton />` `<app-list-state />` `<app-navbar />` `<app-refresher />` `<app-cta />` `<app-form-row />` `<app-option-sheet />`。
 - `main.js` 只装插件：`app.use(uviewPlus)`（这是唯一必要的注册，个别全局方法如 `uni.$u` 依赖它）。
 
 ### 2) 场景 → 先考虑这些组件
@@ -53,17 +53,16 @@ import { theme } from '@/config/theme';
 <u-icon name="info-circle-fill" :color="theme.primary" />
 <u-empty :icon-color="theme.iconPlaceholder" :text-color="theme.textMuted" />
 ```
-可用键（与 `config/theme.js` 逐项核对，共 29 个；2026-10-29 换肤后重校）：
 
-- 主色：`primary`(**#1FBF8F 薄荷绿，真源**) `primaryDark`(#12A276) `primaryLight`(#E6F8F1) —— 新代码优先写这三个
-- 历史名（**别删也别改名**，全仓旧引用绑在它们身上）：`brandYellow` = `primary` · `brandYellowDark` = `primaryDark` ·
-  `brandRed`(#EF4444 价格/强调数字) · `brandOrange`(#0E9B72 **只给数值强调**；暖色语义请取 `warning`)
-- 语义色：`success`(#16A34A) `warning`(#F0A22E，**与 brandOrange 已拆开**) `danger` `info` `track`(#2F7FE0 地图 polyline)
-- 文字：`textTitle textMain textSub textMuted textDisabled textInverse textOnYellow`（`textOnYellow` = **主色底上的白字** #FFFFFF）
-- 背景/填充：`bgPage bgCard bgFillWeak bgFillChip bgFillIcon` + `navSolid`(#E9F4EF 导航栏/tabBar/窗口底色)
-- 描边与其它：`border divider bgHover iconPlaceholder`
+`config/theme.js` 当前可用键（与 `theme.scss` 同值）：
 
-**样式表里**（`<style scoped>`）反过来：用 SCSS 变量 `$color-primary`，**不要** import `theme.js` 去拼字符串。改主色时 `common/css/theme.scss`（真源）和 `config/theme.js`（镜像）**两处一起改**。
+- 主色：`primary` `primaryDark` `primaryLight`
+- 语义色：`success` `warning` `danger` `info`
+- 文字：`textTitle` `textMain` `textSub` `textMuted` `textDisabled` `textInverse` `textOnYellow`
+- 背景/填充：`bgPage` `bgCard` `bgFillWeak` `bgFillChip` `bgFillIcon` `navSolid` `bgHover` `iconPlaceholder`
+- 描边：`border` `divider`
+
+**样式表里**（`<style scoped>`）反过来：用 SCSS 变量 `$color-primary`，**不要** import `theme.js` 去拼字符串。改主色时 `common/css/theme.scss`（真源）和 `config/theme.js`（镜像）**两处一起改**；`pages.json` 窗口色与 tabbar PNG 另需同步（见 README）。
 
 不需要传色的场景：主色/文字色/边框色已被 `base.scss` 里 `page { --up-primary: … }` 覆盖，按钮、开关、选中态**自动跟项目 token**，别逐个组件传色。
 
@@ -93,7 +92,7 @@ import { theme } from '@/config/theme';
 - `app-cta` 是单根满宽盒：调用方宿主必须是块级 + width:100%，不要塞进 flex 居中容器。
 ## 本文件独有的坑
 
-- `u-section` 这个坑长什么样：`components/u-section/` 下只有 `section.js`（props 定义）、**没有 `.vue`**，easycom 解析不到且**不报错**，表现为整块标签凭空消失。同类问题用「先放一个显眼组件试渲染」定位。
+- `u-section` 这个坑长什么样：uview-plus 的 `u-section` 目录下只有 `section.js`（props 定义）、**没有 `.vue`**，easycom 解析不到且**不报错**，表现为整块标签凭空消失。同类问题用「先放一个显眼组件试渲染」定位。
 - 属性/事件全量以官网为准：<https://uview-plus.jiangruyi.com/components/intro.html>；速查表只帮你选型，签名不清就读 `uni_modules/uview-plus/components/u-xxx/u-xxx.vue` 的 props（带 JSDoc）。
 - 项目自有 `app-*` 组件分两形态：状态编排类（modal / skeleton / list-state / loading）自己不画按钮、输入框、空态，可见态一律来自 store（`modalState` / `loadingState`）再由组件渲染或委托 uview；视觉自绘类（navbar / refresher / score-ring）只服务于 HUD 座舱语言，样式尺度跟 `rule-style-css` 尺度表，色值靠 `theme.scss` token。
 - `app-skeleton` 的灰块色靠 `--up-skeleton-bg-color` / `--up-skeleton-shimmer-color` 映射 token（`u-skeleton` 内部读这两个变量），换色板时骨架自动跟色，不用改组件。
@@ -122,7 +121,3 @@ import { theme } from '@/config/theme';
 - **默认插槽是「默认内容」的 fallback——传了就顶掉**：附加件（芯片 / 徽章 / 单位）走 prop 或具名插槽。
 - 禁用 `u-section`（当前版本无 `.vue` 实现，easycom 解析不到，静默不渲染）。
 - 复用判据：同一段结构出现在两页 → 样式进 scaffold；只是逻辑重复 → 抽 `composables/`；真独立可复用才建组件。
-
-## 来源
-
-对照 `components/app-*.vue` 的真实 `defineProps`、`pages.json` easycom 配置、`config/theme.js` 可用键整理。

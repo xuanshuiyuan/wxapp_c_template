@@ -5,7 +5,7 @@
 -->
 <template>
 	<!-- 根节点接 touch：下拉距离的兜底来源（原生不给 dy 时用，见 usePullRefresh 的 dyOf） -->
-	<view class="hud-page" @touchstart="onTouchStart" @touchmove="onTouchMove">
+	<view class="hud-page" :style="{ '--tab-overlay': tabBarOverlay + 'px' }" @touchstart="onTouchStart" @touchmove="onTouchMove">
 		<app-navbar title="demo 列表" />
 		<!-- 三个全局渲染器必挂：守卫码 pushModal / 托管 loading / 自绘 toast -->
 		<app-modal />
@@ -36,7 +36,7 @@
 				<view class="home__head">
 					<view>
 						<text class="t-h2">C 端小程序模板</text>
-						<text class="t-desc home__head-desc">登录 → 列表 → 创建 → 删除 → 文档预览，全链路可跑</text>
+						<text class="t-desc home__head-desc">共 {{ total }} 条 · 登录 → 创建 → 预览 → 删除全链路可跑</text>
 					</view>
 					<view class="chip home__user" @click="goMine">user_id {{ userId || '--' }}</view>
 				</view>
@@ -45,7 +45,7 @@
 				<view v-if="lastCreated" class="card home__preview" hover-class="home__preview--hover" @click="openPreview">
 					<view class="home__preview-main">
 						<text class="t-h3">文档预览</text>
-						<text class="t-desc">最近创建：{{ lastCreated.name }}</text>
+						<text class="t-desc">最近创建：{{ lastCreated.name }}（预览链接 5 分钟内有效）</text>
 					</view>
 					<text class="home__arrow">›</text>
 				</view>
@@ -66,6 +66,7 @@
 					:first-loading="firstLoading"
 					:empty="isEmpty"
 					:error="error"
+					:has-items="hasItems"
 					:loading="loading"
 					:finished="finished"
 					empty-text="还没有记录，点下面按钮新建一条"
@@ -87,7 +88,7 @@ import { computed } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { useList } from '@/composables/useList';
 import { usePullRefresh } from '@/composables/usePullRefresh';
-import { confirm, alert } from '@/composables/useModal';
+import { confirm } from '@/composables/useModal';
 import { demoApi, pickDemoList } from '@/api';
 import { requireLogin, route, DEMO_CREATE_PAGE, DEMO_WEBVIEW_PAGE, MINE_PAGE } from '@/services/route';
 import { toast } from '@/services/toast';
@@ -96,16 +97,20 @@ import { demoState, saveLastCreated } from '@/store/demo';
 import { userState } from '@/store/user';
 import { absoluteUrl } from '@/utils/url';
 import { edition } from '@/config/app';
+import { getLayout } from '@/services/platform';
 import { isApiError } from '@/services/http';
 
 const userId = computed(() => userState.user_id);
+// H5/App 的 tabBar 是页内 fixed 浮层：把让位高度写进 CSS 变量，避免内容底部被 tabBar 盖住
+const tabBarOverlay = getLayout().tabBarOverlay;
 const lastCreated = computed(() => demoState.lastCreated);
 
 // 后端分页契约：query page/page_size，响应 data = { list, total }。
-// immediate:false —— 登录拦截放在 onShow，未登录时不打接口（否则会先吃一次 40003）。
+// immediate:false —— 登录拦截放在 onShow，未登录时不打接口（否则会先吃一次 40005）。
+// pageHooks:false —— 本页是 scroll-view 下拉/触底，禁用 useList 注册的页面级钩子，避免 A/B 档混用。
 const {
-	items, total, loading, firstLoading, finished, error, isEmpty, reload, refresh, loadMore
-} = useList(demoApi.list, { pageSize: 10, pick: pickDemoList, immediate: false });
+	items, total, loading, firstLoading, finished, error, hasItems, isEmpty, reload, refresh, loadMore
+} = useList(demoApi.list, { pageSize: 10, pick: pickDemoList, immediate: false, pageHooks: false });
 
 const { pullState, refreshing, lastRefreshAt, offset, visible, threshold, onPulling, onRefresh, onPullEnd, onTouchStart, onTouchMove } =
 	usePullRefresh({ can: () => !loading.value, onRefresh: refresh });
@@ -153,7 +158,9 @@ async function onDelete(item) {
 		// 删的正好是「最近创建」那条：预览入口一并清掉，避免点进去 404
 		if (lastCreated.value && lastCreated.value.id === item.id) saveLastCreated(null);
 		toast('已删除', 'success');
-		reload();
+		// 等列表重拉结果：删除成功但刷新失败时，至少让用户知道列表可能还是旧的
+		const ok = await reload();
+		if (ok === false) toast('列表刷新失败，请下拉重试');
 	} catch (e) {
 		// 请求层默认已 toast；guard 型由全局弹窗处置，这里忽略
 		if (!isApiError(e) || e.type !== 'guard') console.error('[home] 删除失败：', e);

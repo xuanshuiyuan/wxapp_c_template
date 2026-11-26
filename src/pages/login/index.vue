@@ -12,31 +12,37 @@
 		<view class="login__body">
 			<view class="login__card hud-frame">
 				<view class="login__panel hud-panel">
-					<text class="t-h2">demo 登录</text>
-					<text class="t-desc login__desc">
-						输入任意正整数 user_id 即可签发登录态（模板后端 DevelopBypass 环境仍需签名头或 develop 头）。
+					<text class="t-h2">{{ demoDisabled ? '未接入登录' : 'demo 登录' }}</text>
+					<text v-if="demoDisabled" class="t-desc login__desc">
+						生产环境已禁止 demo 登录。请先替换 services/session.js 的 doLogin() 为真实登录
+						（微信 code2session / 手机号验证码）。
 					</text>
+					<template v-else>
+						<text class="t-desc login__desc">
+							输入任意正整数 user_id 即可签发登录态（模板后端 DevelopBypass 环境仍需签名头或 develop 头）。
+						</text>
 
-					<view class="login__field">
-						<text class="login__label">user_id</text>
-						<input
-							v-model="userIdInput"
-							class="login__input"
-							type="number"
-							placeholder="默认 1"
-							placeholder-class="login__ph"
-							confirm-type="done"
-							@confirm="onLogin"
-						/>
-					</view>
+						<view class="login__field">
+							<text class="login__label">user_id</text>
+							<input
+								v-model="userIdInput"
+								class="login__input"
+								type="number"
+								placeholder="默认 1"
+								placeholder-class="login__ph"
+								confirm-type="done"
+								@confirm="onLogin"
+							/>
+						</view>
 
-					<view class="btn btn--primary btn--block login__cta" @click="onLogin">
-						{{ submitting ? '登录中…' : '登录' }}
-					</view>
+						<view class="btn btn--primary btn--block login__cta" @click="onLogin">
+							{{ submitting ? '登录中…' : '登录' }}
+						</view>
 
-					<text class="t-note login__foot">
-						真实项目替换为微信 code2session / 手机号验证码；本页只是模板联调用的 stub。
-					</text>
+						<text class="t-note login__foot">
+							真实项目替换为微信 code2session / 手机号验证码；本页只是模板联调用的 stub。
+						</text>
+					</template>
 				</view>
 			</view>
 		</view>
@@ -54,21 +60,25 @@ import { isLogin } from '@/services/storage';
 import { login, ensureLogin } from '@/services/session';
 import { route, HOME_PAGE } from '@/services/route';
 import { toast } from '@/services/toast';
+import { isProd } from '@/config/env';
 
 const userIdInput = ref('1');
 const submitting = ref(false);
+// 生产环境 demo 登录被 session.doLogin 拒绝；UI 也不再展示输入框（fail-closed 双保险）
+const demoDisabled = isProd;
 
 // 已登录直接回首页；本地存过 user_id 但 token 还没换回来时，等静默登录一次再决定。
-// （冷启动的 App.onLaunch 与首页 onShow 可能并发触发登录，login 内部单飞只真发一次）
+// 生产环境 demo 登录禁用，不再尝试静默重登（否则每次进页都白打一次失败请求）。
 onShow(async () => {
 	if (isLogin()) {
 		route.relaunch(HOME_PAGE);
 		return;
 	}
-	if (await ensureLogin()) route.relaunch(HOME_PAGE);
+	if (!demoDisabled && (await ensureLogin())) route.relaunch(HOME_PAGE);
 });
 
 async function onLogin() {
+	if (demoDisabled) return;
 	if (submitting.value) return; // 双保险：按钮 in-flight + 托管 loading
 	const id = Number(userIdInput.value);
 	if (!id || id < 1 || !Number.isInteger(id)) {
@@ -78,7 +88,7 @@ async function onLogin() {
 	submitting.value = true;
 	try {
 		await login(id);
-		toast('登录成功', 'success');
+		// 不在跳转前 toast：登录页卸载会立即收起 toast；首页加载成功本身就是反馈
 		// 清栈回首页：登录页不应留在页面栈里
 		route.relaunch(HOME_PAGE);
 	} catch (e) {

@@ -21,10 +21,6 @@ export const theme = {
 	warning: '#F0A22E',
 	danger: '#EF4444',
 	info: '#8C9B95',
-	// 地图轨迹线（与 theme.scss 的 $color-track 同值）。
-	// 原生 <map> 的 polyline color 是 prop、只能传字符串，故这里必须有镜像
-	track: '#2F7FE0',
-
 	// 文字
 	textTitle: '#1B2A25',
 	textMain: '#2C3A34',

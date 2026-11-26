@@ -54,7 +54,8 @@ export function useList(fetcher, config = {}) {
 		immediate = true,
 		params = () => ({}),
 		pick = defaultPick,
-		toastOnError = false
+		toastOnError = false,
+		pageHooks = true
 	} = config;
 
 	const items = ref([]);
@@ -66,6 +67,7 @@ export function useList(fetcher, config = {}) {
 	const error = ref('');
 	const finished = ref(false);
 
+	const hasItems = computed(() => items.value.length > 0);
 	const isEmpty = computed(() => !loading.value && !error.value && items.value.length === 0);
 	const firstLoading = computed(() => loading.value && items.value.length === 0);
 
@@ -126,13 +128,15 @@ export function useList(fetcher, config = {}) {
 		if (immediate) reload();
 	});
 
-	onReachBottom(() => {
-		loadMore();
-	});
+	if (pageHooks) {
+		onReachBottom(() => {
+			loadMore();
+		});
 
-	onPullDownRefresh(() => {
-		refresh();
-	});
+		onPullDownRefresh(() => {
+			refresh();
+		});
+	}
 
 	return {
 		items,
@@ -143,6 +147,7 @@ export function useList(fetcher, config = {}) {
 		refreshing,
 		finished,
 		error,
+		hasItems,
 		isEmpty,
 		firstLoading,
 		reload,

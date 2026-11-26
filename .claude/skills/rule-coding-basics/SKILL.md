@@ -5,7 +5,6 @@ description: 在本项目写任何代码时用：定命名（文件/变量/组�
 
 # rule-coding-basics
 
-> 原 `.claude/rules/coding_style.md` 全量 + `rules/scaffold-musts.md` §9 迁入本文件，**本文件是唯一权威**。跨主题禁令（页面层/请求/样式/组件/多端）在各自 rule-skill 的「硬性禁令」小节，查表见 `.claude/project-meta/skills-index.md`。
 
 ## 硬性禁令（MUST / MUST NOT）
 
@@ -60,7 +59,3 @@ description: 在本项目写任何代码时用：定命名（文件/变量/组�
 
 - 常量归位：业务枚举/码值 → `config/dict.js`；全局配置常量 → `config/app.js`；环境 → `config/env.js`。
 - 纯函数 → `utils/`；有副作用 → `services/`（判定三问见 `rule-project-structure`）。
-
-## 来源
-
-迁入自 `.claude/rules/coding_style.md`（§1 §2 §3 §4，§2.3 指针改为指向各 skill）+ `rules/scaffold-musts.md` §9，最后同步于 2026-09-10（rules 目录已删除）。

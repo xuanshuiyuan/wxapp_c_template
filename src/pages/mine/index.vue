@@ -3,7 +3,7 @@
   演示：userState 响应式视图、session.logout、tabBar 页壳。
 -->
 <template>
-	<view class="hud-page">
+	<view class="hud-page" :style="{ '--tab-overlay': tabBarOverlay + 'px' }">
 		<app-navbar title="我的" />
 		<app-modal />
 		<app-toast />
@@ -40,6 +40,7 @@
 
 				<view class="mine__actions">
 					<view class="btn btn--soft btn--block" @click="onCreate">新建 demo 记录</view>
+					<view class="btn btn--soft btn--block" @click="onCallService">联系客服</view>
 					<view class="btn btn--danger btn--block" @click="onLogout">退出登录</view>
 				</view>
 			</view>
@@ -54,9 +55,12 @@ import { requireLogin, route, DEMO_CREATE_PAGE, LOGIN_PAGE } from '@/services/ro
 import { logout, ensureLogin } from '@/services/session';
 import { userState } from '@/store/user';
 import { confirm } from '@/composables/useModal';
-import { edition, routeVersion } from '@/config/app';
+import { toast } from '@/services/toast';
+import { edition, routeVersion, SERVICE_TEL } from '@/config/app';
+import { callPhone, getLayout } from '@/services/platform';
 
 const userId = computed(() => userState.user_id);
+const tabBarOverlay = getLayout().tabBarOverlay;
 const avatarText = computed(() => (userState.user_id ? String(userState.user_id).slice(-2) : '--'));
 
 onShow(async () => {
@@ -65,6 +69,14 @@ onShow(async () => {
 
 function onCreate() {
 	route.to(DEMO_CREATE_PAGE);
+}
+
+function onCallService() {
+	if (!SERVICE_TEL || SERVICE_TEL.startsWith('REPLACE_')) {
+		toast('请先在 config/app.js 配置客服电话');
+		return;
+	}
+	callPhone(SERVICE_TEL);
 }
 
 async function onLogout() {

@@ -9,6 +9,8 @@ export default defineConfig({
 		uni()
 	],
 	server: {
+		// 与 manifest.h5.devServer.port / README 保持一致
+		port: 5173,
 		// H5 本地调试：请求走相对路径（.env.development 的 VITE_HOST_H5 留空），
 		// 由 dev server 代理到后端，避开浏览器 CORS。
 		// ⚠️ 只影响 npm run dev:h5；小程序端用 VITE_HOST_MP 绝对地址直连。

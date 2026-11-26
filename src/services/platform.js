@@ -302,21 +302,24 @@ export function openCameraSetting() {
 	});
 }
 
-// ---------------------------------------------------------------------------
-// 原生地图能力分档：'native' 用 uni-app 原生 <map>（微信小程序无需 key；H5 走 manifest 的
-// 腾讯地图 key），'schematic' 回落自绘示意图（App / 其他小程序端）。
-// 页面只消费 canNativeMap。
-// ---------------------------------------------------------------------------
-function resolveMapMode() {
-	if (isH5) return 'native';
-	if (isApp) return 'schematic';
-	// #ifdef MP-WEIXIN
-	return 'native';
-	// #endif
-	return 'schematic';
-}
-
-/** 地图实现档：'native' | 'schematic'（进程内算一次） */
-export const MAP_MODE = resolveMapMode();
-/** 能不能用原生 <map>（false = 页面回落自绘示意地图） */
-export const canNativeMap = MAP_MODE === 'native';
+export default {
+	RUNTIME,
+	isMP,
+	isH5,
+	isApp,
+	getLayout,
+	lockPageScroll,
+	unlockPageScroll,
+	callPhone,
+	vibrateLight,
+	openDocument,
+	lockLandscape,
+	unlockOrientation,
+	systemVersionGte,
+	SCAN_MODE,
+	canScan,
+	canInlineScan,
+	authorizeCamera,
+	scanCodeSystem,
+	openCameraSetting
+};

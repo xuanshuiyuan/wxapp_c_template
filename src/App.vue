@@ -1,5 +1,5 @@
 <script>
-import { env, rootPath } from '@/config/env'
+import { env, rootPath, isProd, apiKey } from '@/config/env'
 import { RUNTIME } from '@/services/platform'
 import { ensureLogin } from '@/services/session'
 
@@ -12,6 +12,9 @@ export default {
 		}
 		if (rootPath && RUNTIME !== 'h5' && !/^https?:\/\//.test(rootPath)) {
 			console.error(`[launch] 非 H5 端接口地址必须是绝对地址，当前为 ${rootPath}`)
+		}
+		if (isProd && !apiKey) {
+			console.error('[launch] VITE_API_KEY 未配置：production 包签不出合法请求，请写 .env.production.local')
 		}
 
 		// 静默登录：本地存过 user_id 就自动续一个 token（模板 demo stub 的等价物）。

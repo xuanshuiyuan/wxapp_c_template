@@ -12,6 +12,12 @@ import { ossHost } from '@/config/env';
 export function ossUrl(path) {
 	if (!path) return '';
 	if (/^(https?:\/\/|data:|blob:|wxfile:|\/)/.test(path)) return path;
+	// 域名未配置时返回空串：宁可图片不显示（并有控制台提示），也不要返回无前导斜杠的
+	// 相对串让 <image> 按当前路由解析成 404。
+	if (!ossHost) {
+		console.warn('[ossUrl] VITE_OSS_HOST 未配置，已跳过相对路径：', path);
+		return '';
+	}
 	return ossHost + path;
 }
 

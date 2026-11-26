@@ -33,10 +33,6 @@ $color-warning-text-soft: #C08A3E;
 $color-danger: #EF4444;
 $color-info: #8C9B95;
 
-// 地图路线色：地图类产品「路线 = 冷色」；原生 <map> 的 polyline color 是 prop，
-// 与 config/theme.js 的 theme.track 同值，改色必须一起改
-$color-track: #2F7FE0;
-
 // ============================
 // 文字
 // ============================
@@ -66,12 +62,6 @@ $bg-mask: rgba(0, 0, 0, 0.45);
 // ★ 导航栏 / tabBar / pages.json 窗口底色的**唯一真源**（三处必须同值）
 // 导航栏背景必须是纯色：下拉回弹时露出的窗口区用 pages.json 的同值纯色
 $nav-solid: #E9F4EF;
-
-// 示意地图画布：画布比页底深一档才和页底分得开；街区块比画布亮，靠负空间读作道路
-$map-canvas-1: #E8EFEA;
-$map-canvas-2: #DDE8E2;
-$map-block: rgba(255, 255, 255, 0.58);
-$map-park: rgba(205, 226, 194, 0.55);
 
 // ============================
 // 描边
@@ -207,6 +197,10 @@ $size-tab-underline-h: 6rpx;
 $z-nav: 100;
 $z-bottom-bar: 200;
 $z-popover: 500;
+// 浮层顺序：loading 只挡页面，不能盖住 modal 的按钮；toast 永远在最上
+$z-loading: 9000;
+$z-modal: 10000;
+$z-toast: 11000;
 
 // ============================
 // 动效

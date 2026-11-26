@@ -28,12 +28,15 @@ export function registerAuthHandler(fn) {
 /** 相对路径自动拼 rootPath + 版本前缀（/v2，文档通用约定），完整 http(s) 地址原样使用 */
 function resolveURL(url) {
 	if (/^https?:\/\//.test(url)) return url;
-	// 兼容带/不带前导斜杠两种写法（api/ 业务路径带、endpoints.js 不带），统一去掉再拼
+	// 兼容带/不带前导斜杠两种写法（api/ 业务路径带、endpoints.js 不带），统一去掉再拼。
+	// H5 同域（rootPath 为空）时必须补前导斜杠：否则 `v2/...` 会按当前页面路径解析，
+	// 在 history 路由或子路径部署下指错（hash 路由恰好落在根路径才显得正常）。
 	const path = url.startsWith('/') ? url.slice(1) : url;
-	return `${rootPath}${routeVersion}/${path}`;
+	const prefix = rootPath || '/';
+	return `${prefix}${routeVersion}/${path}`;
 }
 
-/** 拼 GET 查询参数，数组展开为 key=v1&key=v2 */
+/** 拼 GET 查询参数；数组按后端约定序列化为逗号串（禁止 key[]=） */
 function buildURL(url, params) {
 	if (!params || typeof params !== 'object') return url;
 	const qs = Object.keys(params)
@@ -41,7 +44,7 @@ function buildURL(url, params) {
 		.map(key => {
 			const value = params[key];
 			if (Array.isArray(value)) {
-				return value.map(item => `${encodeURIComponent(key)}=${encodeURIComponent(item)}`).join('&');
+				return `${encodeURIComponent(key)}=${encodeURIComponent(value.join(','))}`;
 			}
 			return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
 		})
@@ -69,6 +72,8 @@ function bail(err, toast) {
  * @property {boolean} [authRetry=true] 登录失效时是否静默重登并重放（登录接口本身传 false）
  * @property {boolean} [guard=true] 命中全局业务码守卫（services/guards.js）时是否执行其动作；
  *                                  守卫目标页自己的接口、或只想本地静默处理时传 false
+ * @property {boolean} [rawResponse=false] 允许第三方/裸响应（无 code）直接返回；
+ *                                  统一响应后端的接口必须保持 false（HTML/网关页会被判格式异常）
  * @property {number} [timeout]
  */
 
@@ -96,6 +101,7 @@ async function sendWithPolicy(options) {
 		toast = true,
 		authRetry = true,
 		guard: guardEnabled = true,
+		rawResponse = false,
 		timeout = DEFAULT_TIMEOUT,
 		...rest
 	} = options;
@@ -134,11 +140,25 @@ async function sendWithPolicy(options) {
 	}
 
 	const body = res.data || {};
+	// 统一响应必须是对象；字符串（HTML 错误页 / 代理 SPA fallback）不能当成功。
+	// 第三方裸响应由调用方显式传 { rawResponse: true } 放行，避免把网关页伪装成业务成功。
+	if (typeof body !== 'object' || Array.isArray(body)) {
+		if (rawResponse) return body;
+		bail(new ApiError(ERROR_TYPE.http, '响应格式异常，请稍后重试', { raw: res }), toast);
+	}
 	// 后端 code 可能是字符串，统一按数字比较
 	const numericCode = Number(body.code);
 
-	// 无 code 字段视为成功：兼容不返回统一包装结构的接口（如第三方地址）
-	if (body.code === undefined || body.code === null || numericCode === CODE_SUCCESS) return body;
+	if (body.code === undefined || body.code === null) {
+		if (rawResponse) return body;
+		bail(new ApiError(ERROR_TYPE.http, '响应格式异常，请稍后重试', { raw: res }), toast);
+	}
+	// code 必须能转成数字：非数字（HTML/网关文案）一律按格式异常处理
+	if (!Number.isFinite(numericCode)) {
+		if (rawResponse) return body;
+		bail(new ApiError(ERROR_TYPE.http, '响应格式异常，请稍后重试', { raw: res }), toast);
+	}
+	if (numericCode === CODE_SUCCESS) return body;
 
 	if (numericCode === CODE_LOGIN_EXPIRED) {
 		if (authRetry && authHandler) {

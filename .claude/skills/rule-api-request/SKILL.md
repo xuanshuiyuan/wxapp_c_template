@@ -9,11 +9,28 @@ description: 在本项目新增或修改接口方法、对接后端、决定用 
 
 所有 HTTP 只有一条路：`api/<domain>.js` → `curl`（`services/http/index.js`）→ `request` 策略层。**页面里永远不出现 `uni.request` 和接口路径字符串。**
 
+## 统一结构（硬约束，2026-11-26 定版：表单，不是 JSON）
+
+所有 api 域文件必须遵守同一形状，`npm run check:api` 会静态检查：
+
+```js
+export const demoApi = {
+  list(params, options) { return curl.get(ENDPOINT_DEMO_LIST, params, options) },
+  create(data, options) { return curl.post(ENDPOINT_DEMO_CREATE, data, options) },
+  remove(id, options) { return curl.post(ENDPOINT_DEMO_DELETE, { id }, options) }
+};
+```
+
+- 方法签名一律 `(params|data, options)` 两参；`options` 必须透传（否则 `useList` 的 `toast:false`、页面的 `loading:true` 全部失效）。
+- 响应统一 `{code,msg,data}`，且 `code` 必须能转成数字；非对象 / 缺 code / 非数字一律报「响应格式异常」，只有第三方裸响应才允许 `{ rawResponse: true }`。
+- POST 统一 form（`application/x-www-form-urlencoded`）；`curl` 不提供 `postJSON`。
+- 路径只从 `config/endpoints.js` 取；数组字段在 GET/POST 都序列化为逗号串，禁止 `key[]=`。
+
 ## 用法约定
 
 ### 1) 写一个接口方法
 
-URL 常量统一登记在 `config/endpoints.js`（2026-09-20 用户定：全项目路径集中一个文件，方便查看与修改；原「业务路径就近写在 api/<domain>.js」口径作废，原 `services/http/endpoints.js` 已并入删除）：
+URL 常量统一登记在 `config/endpoints.js`（全项目路径集中一个文件，方便查看与修改；业务路径禁止就近写在 api/<domain>.js）：
 
 ```js
 // config/endpoints.js —— 全项目接口 URL 唯一登记表（按后端文档章节分组，值不带 /v2 前缀）
@@ -44,7 +61,6 @@ export const demoApi = {
 |---|---|---|
 | `curl.get(url, params, options)` | 查询 | `params` 转 query，数组展开成 `k=v1&k=v2`，`undefined/null` 自动丢掉 |
 | `curl.post(url, data, options)` | 写 | **默认表单** `x-www-form-urlencoded`（后端统一格式），对象经 `toQueryString` 序列化 |
-| `curl.postJSON(url, data, options)` | JSON 接口 | 后端明确收 JSON 时才用 |
 | `curl.upload({ filePath, name='file', formData }, url?, options?)` | 传文件 | 默认口 `ENDPOINT_UPLOAD`（模板后端未内置上传，接入时替换）；multipart 边界交给端上生成 |
 
 ⚠️ **数组参数的两种序列化不一致**（两边实现不同，踩过一次就知道）：
@@ -145,7 +161,7 @@ try {
 
 - ⚠️ 上面「当前后端实测契约」一节是**会随时间失效的事实**，不是规则：换后端 / 换项目先重写它，也不要把它当长期约定写进代码注释。
 - ℹ️ 上传：`curl.upload` 已实现（multipart）；模板后端未内置上传接口，接入时替换 `ENDPOINT_UPLOAD`。
-- ℹ️ 构建链（2026-09-20 起）：项目已迁 uni-app CLI（根 `package.json` + `vite.config.js`，业务代码在 `src/`），改动验证跑 `npm run verify:mp-weixin` + `npm run verify:h5`（dev 环境；`build:*` 是 production 模式仅发布用，见 rule-multiplatform 构建节）。UI 库 uview-plus **不走 npm**、在 `src/uni_modules/`；MD5 用 `utils/md5.js` 纯 JS 实现（原 `common/js-md5` 第三方库含 eval 已删除，小程序审核不过）。
+- ℹ️ 构建链（2026-09-20 起）：项目已迁 uni-app CLI（根 `package.json` + `vite.config.js`，业务代码在 `src/`），改动验证跑 `npm run verify:mp-weixin` + `npm run verify:h5`（dev 环境；`build:*` 是 production 模式仅发布用，见 rule-multiplatform 构建节）。UI 库 uview-plus **不走 npm**、在 `src/uni_modules/`；MD5 用 npm 依赖 `blueimp-md5`。
 - ℹ️ `body.code` 可能是字符串，http 层已统一按数字比较；页面拿到的是**完整响应体**，业务数据自己取 `.data`。
 - ℹ️ 无 `code` 字段的响应一律视为成功（为兼容不包统一结构的第三方地址），这类接口 http 层帮不了你判断。
 
@@ -154,7 +170,7 @@ try {
 > 原 `rules/scaffold-musts.md` §3 迁入，**本节是唯一权威**：
 
 - **接口 URL 只允许登记在 `config/endpoints.js`**；禁止在 `api/`、`services/`、页面里内联接口路径字符串（完整 http(s) 第三方地址例外，就近写并注明）。
-- 所有 HTTP 只能经 `curl`（`get` / `post` / `postJSON` / `upload`）；POST 默认表单，后端明确收 JSON 才用 `postJSON`。
+- 所有 HTTP 只能经 `curl`（`get` / `post` / `upload`）；写接口统一表单，`curl` 不提供 `postJSON`。
 - api 方法签名固定 `(params|data, options)`，且 `options` 必须原样透给 `curl` —— 否则页面无法关掉自动 toast、无法托管 loading。
 - 失败一律是 `ApiError`，必须按 `e.type`（`network/http/business/auth/guard`）分支处理或至少展示 `e.message`；禁止忽略错误返回值（`guard` 型例外：守卫已全局处理，忽略是唯一正确反应）。
 - 判型用 `isApiError(e)`；禁止 `instanceof ApiError`（编译降级后会失真）。
@@ -169,7 +185,3 @@ try {
 - **媒体上传按后端频控串行排队**：上传接口常按「用户 + 类型 N 秒」频控，而 `wx.uploadFile` 一次只能带一个文件 → 多选后必须串行、相邻请求留足间隔；大文件优先走后端签名直传 OSS，不要把大文件传给业务服务器。
 - **路由 query 里的中文一律 `safeDecode`**（`utils/qs.js`）：`route.to` / `toQueryString` 会 `encodeURIComponent`，部分端 `onLoad` 拿到的是**未解码**串；解不开就原样返回、绝不让 decode 抛错挡页面。
 - **契约的「错误码表」不等于后端的实际闸口**：表里没写的码后端也可能回。**判据以「后端实现 + 真机」为准**，拿不准时按更严的那一侧处理（要门槛 / 加 `guard: false` / 只在点击后调），几条相关硬性禁令见 `rule-auth-state`。
-
-## 来源
-
-提炼自 `services/http/{index,request,error,sign}.js`、`config/endpoints.js`、`api/demo.js` 与后端模板 demo 模块契约。

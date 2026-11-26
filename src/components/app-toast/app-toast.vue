@@ -44,7 +44,7 @@ onBeforeUnmount(removeToastInstance);
 	left: 0;
 	// 只做反馈、不挡点击（与系统 toast 一致）
 	pointer-events: none;
-	z-index: $z-popover + 100;
+	z-index: $z-toast;
 	display: flex;
 	align-items: center;
 	justify-content: center;

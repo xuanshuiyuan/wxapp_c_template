@@ -27,62 +27,41 @@ src/common/css/main.css    ← ColorUI（只当布局原子类用）
 3. ColorUI 与自有原子类**共存但不混用**：布局类（`.flex` `.flex-wrap` `.justify-between` `.align-center`）和 `.solid-*` 可以继续用 ColorUI；**颜色 / 字号 / 间距一律走本项目的 `.c-* .fz-* .m-*`**。两套只在 `.text-center/.text-left/.text-right`、`.grid` 重名且语义一致。
 4. 单位统一 `rpx`（750 设计稿基准，别写 `upx`）；**写死颜色前先问自己是不是该用 token**。
 
-## Token 全清单（`src/common/css/theme.scss`，2026-10-30 按换肤后真源逐行重校）
-
-> ⚠️ **本体系的主色是薄荷绿 `#1FBF8F`**（2026-10-29 换肤方案 A「青柠氧气」）。早期「懂车帝绿 `#2fa871`」与
-> 「主色 `#FFCC32`」两套色板**均已整体作废**。变量名**刻意一个没改**——`$color-brand-yellow` / `-dark` /
-> `-orange` 现在是历史名别名，分别指向「主色 / 主色深 / 数值强调」，全仓 378 处旧名引用因此零改动。
-> 抄旧稿、抄懂车帝或别的项目配色前先对这张表；数值一律引用本表 token，禁止在页面里写死。
+## Token 全清单（`src/common/css/theme.scss`，唯一真源）
 
 ```scss
-/* 主色（唯一真源） */ $color-primary #1FBF8F（CTA/进度条/标题竖条/瓦片/选中芯片/活跃分页）
-                      $color-primary-dark #12A276（按下态/图标 accent/次级强调）  $color-primary-light #E6F8F1（主色浅底）
-/* 数值强调 */        $color-accent #0E9B72（续航大数字/估价金额/预计跌破日期/容量英雄数字）  $color-accent-soft #E8F7F2
-/* 历史名别名 */      $color-brand-yellow = $color-primary   $color-brand-yellow-dark = $color-primary-dark
-                      $color-brand-orange = $color-accent   $color-brand-red #EF4444（价格/强调数字/资讯红点）
-/* 标签/牌照 */       $color-tag-warm-bg #FFF4E2 + $color-tag-warm-fg #B26A05（促销「惠」）
-                      $color-nev-plate-1 #F0FAF2 / -2 #D6F2DF / -3 #AEE8C4（新能源牌照渐变绿三档，**换肤不动**——真实号牌色；仅样式类，不入 theme.js）
-/* 语义色 */          $color-success #16A34A   $color-warning #F0A22E（**字面值，不许再 alias brand-orange**）   $color-danger #EF4444   $color-info #8C9B95
-                      $color-warning-text #B26A05（浅底压深）  $color-warning-text-soft #C08A3E  $color-danger-text #B91C1C（红带文字档）
-                      $color-track #2F7FE0（地图路线，**已入 theme.js 镜像**）
-/* 文字 */            $text-title #1B2A25（ink-1 标题/正文/Tab/深色按钮底）  $text-main #2C3A34（ink-2 未选中芯片）
-                      $text-sub #5D716A（ink-3 说明/单位）  $text-muted #95A7A1（ink-4）  $text-disabled #B9C6C1  $text-inverse #FFF
-                      $text-on-yellow #FFFFFF（主色底主文字——**绿底白字**）  $text-on-yellow-2 rgba(255,255,255,.7)（主色底副文字）
-/* 背景填充 */        $bg-page #FFF  $bg-card #FFF  $bg-hover #F2F7F5  $bg-mask rgba(0,0,0,.45)
-                      $bg-fill-weak #F2F8F5（信息条/页底/图标底盘，HUD 页底基色）  $bg-fill-chip #EFF9F5（未选中芯片/间隙带/骨架块）
-                      $bg-fill-icon #2F4A42（深绿墨）  $bg-fill-icon-soft #E4F4EE  $bg-fill-inverse #14261F（深色按钮底）
-                      $bg-hero（头图区薄荷多段渐变，整条是一个 gradient 值，不是色号）
-/* 窗口底色 */        $nav-solid #E9F4EF ← **导航栏 / tabBar / pages.json 窗口底色的唯一真源，三处必须同值**
-/* 示意地图 */        $map-canvas-1 #E8EFEA / -2 #DDE8E2  $map-block rgba(255,255,255,.58)  $map-park rgba(205,226,194,.55)（需要地图的页面消费，仅样式类）
-/* 描边 */            $border-color #E3EFE9（卡片描边/宫格列线）  $border-color-2 #E3EFE9（卡片底边）
-                      $divider-color #E2EBE7（行内竖分隔）  $line-chip #3F5B52（选中芯片发丝）
-/* 字号 rpx（9 档语义名，390pt×1.923 反推；换肤不动字号） */
-                      $fs-micro 21  $fs-caption 23  $fs-body 25  $fs-label 29  $fs-cta 33  $fs-price 35  $fs-tab 42  $fs-display 46  $fs-hero 80
-                      旧名映射：xs→micro  sm→caption  base/md→body  lg→label  xl→cta  2xl→tab  3xl→display（新代码优先用语义名）
-/* 字重 */            $fw-bold 700  $fw-semibold 600  $fw-medium 500  $fw-regular 400
-/* 行高（语义档配字号用） */ $lh-display 62  $lh-hero 80  $lh-tab 54  $lh-price 46  $lh-cta 42  $lh-label 38  $lh-body 35  $lh-caption 31  $lh-micro 27
-                      倍数档：$lh-tight 1.25  $lh-base 1.6  $lh-loose 1.8
-/* 间距 rpx（基数 8） */ $sp-0-5 4  $sp-1 8  $sp-1-5 12  $sp-2 16  $sp-3 24  $sp-4 32  $sp-5 40  $sp-6 48  $sp-7 56  $sp-8 64  $sp-10 80
-/* 语义间距 */        $page-padding 32  $card-padding 32  $card-gap 24  $section-gap 12  $chip-gap 16  $nav-height 84
-/* 安全区 */          $safe-bottom / $safe-top = env(safe-area-inset-*)  ← 安全距离唯一来源（2026-10-20 立，禁令在 rule-multiplatform）
-/* 底栏 */            $bottom-bar-gap 16  ← 固定底栏下边距，全项目规定死；两行写法见「版式块清单」下方
-/* 圆角（2026-10-29 斜切整体退役、改圆角后的全表） */
-                      $rd-tile 26（.hud-tile 88rpx 瓦片）  $rd-tag 999（芯片/徽章胶囊）  $rd-card 28（舱体/卡片/列表行底）
-                      $rd-chip 12（tip 多行条/输入框/小标签底，**别改 999**，长文本框会成药丸）  $rd-badge 999（分栏徽章）
-                      $rd-lg 32（大卡片）  $rd-pill 999（正圆）  $rd-button 44（主 CTA/次级按钮/弹窗按钮，原为 0 靠 clip-path 斜切）
-                      旧名：sm→chip(12)  md→card(28)  full→pill(999)
-/* 阴影/发光 */       $shadow-card（软投影，替代原 drop-shadow）  $shadow-bottom-bar（底栏上投影）  $shadow-float（弹层/浮层）
-                      $glow-primary（舱体外发光 0 0 20rpx rgba(31,191,143,.14)，与流光配套新增）
-/* 组件尺寸 */        $size-cta-h 92  $size-chip-h 46  $size-icon-circle 38  $size-icon-button 84  $size-tab-underline-w/h 36/6
-/* z-index */         $z-nav 100  $z-bottom-bar 200  $z-popover 500
-/* 动效 */            $ease-standard cubic-bezier(.4,0,.2,1)  $duration-fast .15s  $duration-base .25s
+/* 主色 */        $color-primary #1FBF8F（CTA/进度条/标题竖条/瓦片/选中芯片/活跃分页）
+                   $color-primary-dark #12A276（按下态/图标 accent/次级强调）  $color-primary-light #E6F8F1（主色浅底）
+/* 数值强调 */    $color-accent #0E9B72（金额/大数字/预计日期）  $color-accent-soft #E8F7F2
+/* 语义色 */      $color-success #16A34A  $color-warning #F0A22E（暖橙，**字面值，不许 alias accent**）
+                   $color-danger #EF4444  $color-info #8C9B95
+/* 标签 */        $color-tag-warm-bg #FFF4E2  $color-tag-warm-fg #B26A05（促销「惠」）
+/* 文字 */        $text-title #1B2A25  $text-main #2C3A34  $text-sub #5D716A  $text-muted #95A7A1
+                   $text-disabled #B9C6C1  $text-inverse #FFF  $text-on-yellow #FFF（主色底白字，历史名）  $text-on-yellow-2 rgba(255,255,255,.7)
+/* 背景填充 */    $bg-page #FFF  $bg-card #FFF  $bg-fill-weak #F2F8F5（页底/信息条）  $bg-fill-chip #EFF9F5（芯片/骨架）
+                   $bg-fill-icon #2F4A42  $bg-fill-icon-soft #E4F4EE  $bg-fill-inverse #14261F  $bg-hero（薄荷渐变）
+                   $bg-hover #F2F7F5  $bg-mask rgba(0,0,0,.45)
+/* 窗口底色 */    $nav-solid #E9F4EF ← 导航栏 / tabBar / pages.json 三处同值
+/* 描边 */        $border-color #E3EFE9  $border-color-2 #E3EFE9  $divider-color #E2EBE7  $line-chip #3F5B52
+/* 字号 rpx */    micro 21 / caption 23 / body 25 / label 29 / cta 33 / price 35 / tab 42 / display 46 / hero 80
+                   旧名：xs sm base md lg xl 2xl 3xl（新代码优先语义名）
+/* 字重/行高 */   $fw-bold 700 $fw-semibold 600 $fw-medium 500 $fw-regular 400
+                   $lh-display 62 $lh-hero 80 $lh-tab 54 $lh-price 46 $lh-cta 42 $lh-label 38 $lh-body 35 $lh-caption 31 $lh-micro 27
+                   $lh-tight 1.25 $lh-base 1.6 $lh-loose 1.8
+/* 间距 rpx */    $sp-0-5 4 $sp-1 8 $sp-1-5 12 $sp-2 16 $sp-3 24 $sp-4 32 $sp-5 40 $sp-6 48 $sp-7 56 $sp-8 64 $sp-10 80
+                   $page-padding 32 $card-padding 32 $card-gap 24 $section-gap 12 $chip-gap 16 $nav-height 84
+/* 安全区 */      $safe-top / $safe-bottom / $safe-left / $safe-right（唯一来源，禁止手写 env）
+/* 底栏 */        $bottom-bar-gap 16（两行写法：纯 rpx 回退 + calc 叠安全区）
+/* 圆角 */        $rd-tile 26  $rd-tag 999  $rd-card 28  $rd-chip 12  $rd-badge 999  $rd-lg 32  $rd-pill 999  $rd-button 44
+                   旧名：sm→chip  md→card  full→pill
+/* 阴影/发光 */   $shadow-card / $shadow-bottom-bar / $shadow-float / $glow-primary
+/* 组件尺寸 */    $size-cta-h 92 $size-chip-h 46 $size-icon-circle 38 $size-icon-button 84 $size-tab-underline-w/h 36/6
+/* z-index */     $z-nav 100 $z-bottom-bar 200 $z-popover 500 $z-loading 9000 $z-modal 10000 $z-toast 11000
+/* 动效 */        $ease-standard cubic-bezier(.4,0,.2,1)  $duration-fast .15s  $duration-base .25s
 ```
 
-> ⚠️ **`theme.scss` 的变量定义顺序是硬约束**：`$color-primary` 必须在 `$color-brand-yellow` 之前；
-> `$color-warning` 必须是字面值，**不能**写成 `= $color-brand-orange`——后者已是「数值强调（深绿）」，
-> 那样写会让告警跟着主色变绿。
-
-新增档位：在 `theme.scss` 加变量 → 若是间距，还要去 `base.scss` 的 `$spacing-steps` 加值（否则原子类生成不出来）。
+> ⚠️ `theme.scss` 只写变量、不写 CSS 规则；`$color-warning` 必须是字面值，不能 alias 主色/强调色。
+> 新增间距档要同步 `base.scss` 的 `$spacing-steps`，否则原子类生成不出来。
 
 ## 原子类清单（`src/common/css/base.scss`）
 
@@ -147,12 +126,12 @@ src/common/css/main.css    ← ColorUI（只当布局原子类用）
 ## 换肤 / 复用这套样式（这就是分三层存在的意义）
 
 1. 颜色/字号/间距的值 → **只改 `src/common/css/theme.scss` 一个文件**，base、scaffold、页面里的 token 引用全自动跟随；
-2. 同步 `config/theme.js`（JS 镜像，只收需要传字符串 prop 的色；`$color-warning-text{,-soft}`、`$color-tag-warm-*`、`$color-nev-plate-*` 按 theme.scss 注释**故意不入镜像**，另有一个 `iconPlaceholder` 只在 JS 侧存在）；
+2. 同步 `config/theme.js`（JS 镜像，只收需要传字符串 prop 的色；`$color-warning-text{,-soft}`、`$color-tag-warm-*` 按 theme.scss 注释**故意不入镜像**，另有一个 `iconPlaceholder` 只在 JS 侧存在）；
 3. 想改默认背景/正文观感或标题尺度 → 只动 `base.scss` 的 `page {}` 与 `.t-*`。
 
 2026-10-29 换肤实测出来的三条附加口径：
 
-- **改主色只需动 `$color-primary` 三档**，全仓 378 处 `$color-brand-yellow*` / `-orange` 引用会自动跟随（它们是别名）。
+- **改主色只需动 `$color-primary` 三档 + `config/theme.js` 的 `primary*` 三键**；页面里不要再写历史品牌色别名。
   ⚠️ 但**不要顺手把 `$color-warning` 也改成别名指向 alias**——它在 2026-10-29 被刻意拆成字面值，
   否则「告警」会跟着主色变绿、红黄绿三档语义全废。
 - **`$nav-solid` 是三处同值项**：`theme.scss` 的 `$nav-solid`、`app-navbar` 的底色、`pages.json` 的
@@ -176,7 +155,7 @@ src/common/css/main.css    ← ColorUI（只当布局原子类用）
 
 - **暗面 UI 的色档豁免（2026-09-22 定）**：本项目全局 token 是**浅舱**体系（白瓷面 + 深墨字），没有「压在全屏相机预览上的暗色 UI」这一族。P4 扫码取景层需要的那几个色（`#12141A` 底 / `#2A2E38` 渐变亮端 / `#FFE58A` 暗面提亮黄 / `#B3282D` 权限拒绝带红）**为全局找不到对应的单页特例**，处理口径：
   ① **有全局档的一律直接用 token**——白 = `$text-inverse`、深墨 = `$text-title`、卡片白底 = `$bg-card`，半透明写 `rgba($token, α)`；
-  ② **确无对应的收成页面内具名 SCSS 变量**（范本 = `pages/vehicle/obd` 样式块顶部的 `$obd-ink` / `$obd-ink-2` / `$obd-accent` / `$obd-warn-ink`，带 why 注释），**禁止把 hex 散在每条规则里**；
+  ② **确无对应的收成页面内具名 SCSS 变量**（范本 = 业务页样式块顶部按域命名的 SCSS 变量，带 why 注释），**禁止把 hex 散在每条规则里**；
   ③ 只为单页服务、无换肤需求，**不许为它扩全局 token 表**（一档全局色会牵动 `theme.js` 镜像与所有页面）。
   判据：同一值被 ≥2 个页面需要 → 才提全局档；只 1 页用 → 页内具名变量 + 注释说明为什么不开档。
 
@@ -214,7 +193,7 @@ src/common/css/main.css    ← ColorUI（只当布局原子类用）
    所有业务卡复用这几类，**禁止手写白卡 + 圆角 + 阴影另造舱体**。
 3. **强调层**：主色流光描边（**只给主模块**，走 `.hud-frame--flow`）、主色标题竖条
    （`.card__title::before` 语言，`$color-primary → $color-primary-dark` 竖向渐变）、`$glow-primary` 外发光；
-   **数值强调用 `$color-accent`（深绿）**；**暖色提示与告警用 `$color-warning`（暖橙，不要用 `brand-orange`——
+   **数值强调用 `$color-accent`（深绿）**；**暖色提示与告警用 `$color-warning`（暖橙，不要用 `$color-accent`——
    它已是数值强调）**；危险色只给危险/上涨语义。
 4. **文字层**：浅底一律深墨四档 `$text-title/main/sub/muted`；舱内不出现白字（深色舱方案已废弃）。
    **唯一例外是主色底**（CTA / 实心芯片）：那里必须用白字 `$text-on-yellow`，深墨压深绿读不清。
@@ -252,14 +231,8 @@ src/common/css/main.css    ← ColorUI（只当布局原子类用）
   `$color-danger #EF4444`（异常/危险）各自独立；主色绿是**结构色**，不能拿来表达「正常」或「成功」。
 
 ### 图标约定
-- 线稿图标集按业务域分目录，实际有 **11 组**（`src/static/icons/`，共 51 枚）：
-  **`service/` 11 · `mine/` 11 · `battery/` 6 · `safety/` 6 · `scrap/` 4 · `trip/` 3 · `valuation/` 3 ·
-  `account/` 2 · `social/` 2 · `vehicle/` 2 · `sell/` 1**——**`icons/` 下没有 `tabbar/` 目录**。
-  PIL 4x 超采样生成的墨线线稿（`$text-title` / 次级灰）+ 单处**主色 accent**（2026-10-29 由主色改为 `#1FBF8F`）+ 圆角/图形轮廓。
-  生成脚本在 `docs/scripts/`（仓库根，勿加 `src/` 前缀）：`gen-{account,battery,checkin,insurance,mine,safety,scrap,sell,social,trip,valuation,vehicle-live,icons-main,...}.py`，
-  每个脚本各有一处 accent 常量（名字不一，如 `YELLOW` / `ACCENT`）——**换肤/改色时统一改常量后重跑覆盖 `src/static/icons/**`，不要手工 PS 单张**；
-  资产总表与档位判据见 `docs/scripts/README-icons.md`（`docs/` 不进版本库，换机器需另行同步）。
-- tabBar 图标在 **`src/static/tabbar/`**，与 `icons/` 同级、每 tab 两枚（`{name}.png` 未选中 / `{name}-active.png` 选中 = 主色）；
+- 模板自带图标只有 **tabBar 两枚 × 两态**（`src/static/tabbar/{name}.png` / `{name}-active.png`）与全局 loading 占位图 `src/static/loading.png`。
+  新项目按自己的 tab 数量替换；业务页图标建议同样放 `src/static/` 下按域分目录，不要散在 `uni_modules`。
   `pages.json` 里文字色 `color #95A7A1`（= `$text-muted`）/ `selectedColor #12A276`（= `$color-primary-dark`）/
   `backgroundColor #FFFFFF`。新增图标按「线稿 + 单主色 accent」生成，**禁止彩色 emoji 或引入填充图标库**。
 
@@ -296,22 +269,8 @@ src/common/css/main.css    ← ColorUI（只当布局原子类用）
 - **`clip-path` 只准用于图形**（闪电标 / 下拉箭头 / 雷达多边形 / 曲线面积 / 视频进度条）；
   **卡片、按钮、瓦片、缩略图、上传槽、芯片一律用 `border-radius`**——2026-10-29 换肤起斜切语言整体退役。
 - **流光只挂主模块**（`.hud-frame--flow`，当前两处）；禁止把 `animation` 加回 `.hud-frame` 本体（长列表掉帧、抢重点）。
-- **暖色语义不许用 `$color-brand-orange`**（它已改指「数值强调」深绿）：暖提示与告警一律 `$color-warning`；
-  `$color-warning` 也不许写成 `= $color-brand-orange` 的别名（否则告警跟着主色变绿）。
+- **暖色语义不许用 `$color-accent`**（它是「数值强调」深绿）：暖提示与告警一律 `$color-warning`；
+  `$color-warning` 必须是字面值，不许 alias `$color-accent`（否则告警跟着主色变绿）。
 - **主色底上的文字必须是白字 `$text-on-yellow`**，不许写 `$text-title`（深墨压深绿读不清）。
 - **导航栏 / tabBar / `pages.json` 窗口底色三处必须同为 `$nav-solid`**；只改一处，下拉回弹就露色差。
 - 禁止往 scroll-view refresher 槽放视觉内容（原生回弹收缩会溢出遮盖）；下拉指示器走顶栏下缘浮层 `app-refresher`（骑在下拉空档里、随下拉下移，见动效节奏节）。
-
-## 来源 / 最后同步
-
-提炼自 `docs/ARCHITECTURE.md` §4（含 §4.1–§4.5）+ `src/common/css/theme.scss`、`src/common/css/base.scss`、`src/styles/scaffold.scss`、`src/App.vue` 全局块的实际变量/类名清点；2026-09-10 并入原 `.claude/rules/scaffold-musts.md` §6（rules 目录已删除）。
-
-**最后同步 2026-10-30（换肤批 v1.0.20）**：按换肤后的 `theme.scss` / `scaffold.scss` / `config/theme.js` / `pages.json` 全量重写——
-主色改薄荷绿 `#1FBF8F`（`$color-brand-yellow*` / `-orange` 降为历史名别名，`$color-warning` 拆成字面值）、
-新增 `$nav-solid` / `$color-accent` / `$map-*` / `$glow-primary`、圆角表整组换新（斜切语言退役）、
-「斜切尺度表」整节改为「**圆角尺度表**」、流光从全量改为「只主模块 `.hud-frame--flow`」、
-尺度基准表按新真值重校（按钮 28/44、芯片与徽章胶囊、卡片 28）、图标目录改为 11 组 51 枚并改主色 accent、
-tabBar 三色改为 `#95A7A1 / #12A276 / #FFFFFF`；硬性禁令补圆角档、clip-path 仅图形、暖色不许用 brand-orange、
-主色底白字、窗口底色三处同值五条。
-
-**历史同步（2026-09-22）**：token 与尺度清单按 `theme.scss` / `scaffold.scss` 全量重校（旧「懂车帝绿」色板值、旧字号/间距/圆角档、旧尺度基准表全部作废重写）；补登 `.hud-page` 页壳族、`.hud-frame--band/.hud-panel--band` 矮舱、`.hud-tile` 三件套、`.badge-split`；间距档位差集改正（无 token 的是 **20**，无原子类的是 **56**）；uview 覆盖变量数改 **8**；图标目录改 `static/icons/{service,mine,battery,valuation,social}` + `static/tabbar/`；全文模块路径统一 **`src/`** 口径（见文件开头「路径口径」）。

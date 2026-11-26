@@ -68,7 +68,6 @@ PY
 `archive/README.md` 必写四件事：
 1. 归档日期与原因（「根目录只放新稿」）；
 2. 路径映射：旧文档里的 `docs/design/<name>-preview.html` → 现在在 `docs/design/archive/<name>-preview.html`；
-3. **旧引用不改写**（`.claude/changelog/`、`project-meta/versions/*` 属历史审计，按项目约定「历史条目不改写」）；
 4. 「新稿在哪」表（本轮新增的每一份都要登记）。
 
 ⚠️ `docs/` 被 `.gitignore` 忽略：**不要 `git add docs/`**，也不要在 SYNC 里把它们的未跟踪状态当漂移修掉。
@@ -131,7 +130,7 @@ UNC 地址在 WSL 里解析不到（反斜杠不是目录分隔符），Linux �
 
 ### 4.1 文件命名与拆分
 
-- `<page>-preview.html`，kebab-case，带域前缀（`home-` / `battery-` / `vehicle-` / `valuation-` / `sell-` / `recycle-`）；
+- `<page>-preview.html`，kebab-case，带域前缀（如 `home-` / `detail-` / `form-`）；
 - **一屏一稿**：同一张图里并排两屏（如「主页面 + 全屏地图页」）= 两个文件，互相引用；
 - 增改型需求（给某模块加一个入口）= 单独一份「入口稿」，**不重画整页**，但要带 1:1 局部图与周边节奏；
 - 有页面代号（H01 / B10 / 灌在页脚的出口编号）就照抄；**代号没给就不编**。
@@ -171,11 +170,10 @@ UNC 地址在 WSL 里解析不到（反斜杠不是目录分隔符），Linux �
 
 ```css
 :root{
-  /* 2026-10-29 换肤 A「青柠氧气」：主色薄荷绿；brand-* 是历史名别名 */
+  /* 与 src/common/css/theme.scss 同值 */
   --primary:#1FBF8F; --primary-dark:#12A276; --primary-light:#E6F8F1;
   --accent:#0E9B72;                       /* 数值强调（深绿） */
-  --brand-yellow:var(--primary); --brand-yellow-dark:var(--primary-dark); --brand-orange:var(--accent);
-  --success:#16A34A; --warning:#F0A22E; --danger:#EF4444;   /* warning 是暖橙，别写成 brand-orange */
+  --success:#16A34A; --warning:#F0A22E; --danger:#EF4444;   /* warning 是暖橙，别写成 accent */
   --text-title:#1B2A25; --text-main:#2C3A34; --text-sub:#5D716A; --text-muted:#95A7A1;
   --border-color:#E3EFE9; --divider-color:#E2EBE7;
   --bg-fill-weak:#F2F8F5; --bg-fill-chip:#EFF9F5; --bg-card:#FFFFFF; --nav-solid:#E9F4EF;

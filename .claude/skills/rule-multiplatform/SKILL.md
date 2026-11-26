@@ -1,6 +1,6 @@
 ---
 name: rule-multiplatform
-description: 在本项目需要区分运行端（微信小程序/H5/App）、遇到某端表现不一致（H5 正常小程序空白、样式错位、滚动异常）、H5 调试接口报网络错或空 404、需要做状态栏/导航栏/底部安全区适配、或考虑写 #ifdef 时使用。规定 #ifdef 只允许出现的三个位置、platform.js 的端判定与布局接口（含**能力分档范式：扫码 SCAN_MODE**）、**跨端定位 getCurrentCoord 的降级口径**、构建与编译验证口径（验证必用 dev 环境 verify:*、`dist/build` 覆盖陷阱）。
+description: 在本项目需要区分运行端（微信小程序/H5/App）、遇到某端表现不一致（H5 正常小程序空白、样式错位、滚动异常）、H5 调试接口报网络错或空 404、需要做状态栏/导航栏/底部安全区适配、或考虑写 #ifdef 时使用。规定 #ifdef 只允许出现的两个位置、platform.js 的端判定与布局接口（含**能力分档范式：扫码 SCAN_MODE**）、**跨端定位 getCurrentCoord 的降级口径**、构建与编译验证口径（验证必用 dev 环境 verify:*、`dist/build` 覆盖陷阱）。
 ---
 
 # rule-multiplatform
@@ -30,7 +30,7 @@ RUNTIME   // 'mp' | 'h5' | 'app'（其余小程序端按 mp 分支处理）
 
 `isMP/isH5/isApp` 适合"这一端整体走另一条路"的场景；**同一件事在各端能力不同、还要叠加版本降级时，把它封成一个能力常量 + 几个能力口**，页面只消费标志，不出现端名。现成范本 = 扫码（见 §1.6）。这样页面里没有端语义，加一端只改 `platform.js`。
 
-### 1.6) 扫码能力分档 `SCAN_MODE`（P4 车盒绑定页范本）
+### 1.6) 扫码能力分档 `SCAN_MODE`（通用能力范本）
 
 ```js
 import { canScan, canInlineScan, authorizeCamera, scanCodeSystem, openCameraSetting } from '@/services/platform';
@@ -42,17 +42,17 @@ import { canScan, canInlineScan, authorizeCamera, scanCodeSystem, openCameraSett
 | `canInlineScan` | 能不能页内就地扫（true 才挂全屏相机层） |
 
 分档判据全在 `platform.js` 内：H5 无相机权限模型 → `none`；App 端 `camera` 的 `scanCode` 模式表现不稳 → `system`；
-微信小程序按**基础库版本**决定（`camera mode=scanCode` 认一维条形码需 ≥ **2.27.1**，车盒标签正是一维码，低版本就地扫永远不出结果）→ `camera` 或降 `system`；其余小程序端 `camera` 口径不一 → `system`。
+微信小程序按**基础库版本**决定（`camera mode=scanCode` 认一维条形码需 ≥ **2.27.1**，一维码场景在低版本就地扫永远不出结果）→ `camera` 或降 `system`；其余小程序端 `camera` 口径不一 → `system`。
 配套三个能力口：`authorizeCamera()` → `Promise<boolean>`（先显式拿 `scope.camera`，别靠 camera 组件自己弹框，被拒后页面没有引导位）、`scanCodeSystem()` → `Promise<string>`（取消/失败回空串，属正常路径）、`openCameraSetting()` → `Promise<boolean>`（设置页开回权限后续扫）。
 
-**页面侧写法**（`pages/vehicle/obd`）：扫码卡 `v-if="canScan"`、取景层 `v-if="scanning && canInlineScan"`、相机处理函数**全端定义**（非就地扫端 `scanning` 恒 false，它们是死代码）。
+**页面侧写法**（业务页示例）：扫码卡 `v-if="canScan"`、取景层 `v-if="scanning && canInlineScan"`、相机处理函数**全端定义**（非就地扫端 `scanning` 恒 false，它们是死代码）。
 代价 = `<camera>` 标签会进 H5/App 产物（`v-if` 为假不渲染，只多几个组件标记），换来 = 页面链路零条件编译。
 
 🔬 **同层渲染下手势归相机（2026-09-22 真机两轮实验定档，别再踩）**：
 全屏取景层 `<camera>` 的**任何祖先节点都不许挂 `@touchmove.stop.prevent`（= `catchtouchmove`）**。
 挂了之后的现象是「双指缩放毫无反应」——父层 catch 并 `preventDefault()` 掉 touchmove 序列，
 原生相机的缩放手势识别收不到事件；**而给浮层加 `pointer-events: none` 救不了**（实验证过，无效）。
-- 想防底层页面跟着滚：只准把 `catchtouchmove` 加在**不覆盖取景区**的局部（如屏底按钮条 `.obd-cam__row`、成功后压在上面的确认层）。
+- 想防底层页面跟着滚：只准把 `catchtouchmove` 加在**不覆盖取景区**的局部（如屏底按钮条、成功后压在上面的确认层）。
 - 覆盖在取景区上的纯视觉浮层（括号/扫描线/芯片/文案）保留 `pointer-events: none` 是好习惯，但**它不是解决方案**，别拿它去顶替摘除祖先的 catch。
 - 同类陷阱推广到任何"原生组件 + 自绘浮层"组合（map、video、camera）：**祖先层的手势拦截会静默废掉原生交互**，出问题先往这查。
 > ⚠️ 2026-09-22 变更：本页原有 **11 处页内 `#ifdef`** 违反禁令，本批按上述方式全部收敛进 `platform.js`。**新增端差异时照这个范式做，不要退回页内 `#ifdef`。**
@@ -126,32 +126,31 @@ $bottom-bar-gap: $sp-2;                      // 16rpx —— 固定底栏下边�
    故凡 `calc(...env/constant...)` 一律**上面先写一行不含 env 的同属性声明**（底栏把它写进 `padding`
    简写的第三值也等价；构建期 cssnano 会把 `padding` + `padding-bottom` 合并成简写，正好保留回退）。
 3. **固定底栏「按钮底缘到屏幕底」= `$bottom-bar-gap` + `$safe-bottom`，全项目一个数**——
-   现状：`obd` / `bind-car` / `valuation-report` / `charge-manager` 四个底栏 + scaffold `.footer-bar`
-   全部同档；新增底栏照抄这一行即可，**不要**按设计稿或参考图另挑值（`obd` / `bind-car` 原先各带
-   24rpx、`charge-manager` 曾用 `$sp-4`、`valuation-report` 用 `$sp-2`，已全部收敛）。
+   现状：多个业务页底栏 + scaffold `.footer-bar`
+   全部同档；新增底栏照抄这一行即可，**不要**按设计稿或参考图另挑值（旧页面原先各带
+   24rpx、历史上各页底栏间距曾不一致，现已全部收敛）。
 
-### 4) 允许写 `#ifdef` 的位置（白名单，只有这三处）
+### 4) 允许写 `#ifdef` 的位置（白名单，只有这两处）
 
 | 文件 | 用来做什么 |
 |---|---|
 | `services/platform.js` | 端判定、胶囊导航栏高度与 `capsuleReserve`、H5 锁滚（`lockPageScroll`/`unlockPageScroll`）、**扫码能力分档 `SCAN_MODE` 与微信基础库版本判断** |
-| `services/session.js` | 登录凭证（`MP-WEIXIN` 换 code / 非微信端 `MOCK_LOGIN_CODE` 固定码联调） |
 | `config/env.js` | 选 host（浏览器有 CORS、小程序没有） |
 
-**2026-09-22 复核**：全仓（排除 `src/uni_modules/` 三方库）条件编译**只剩这三处**——`grep -rl "#ifdef\|#ifndef" src --include=*.vue --include=*.js | grep -v uni_modules` 恰命中 `platform.js` `session.js` `env.js` 三文件。
+**复核口径**：全仓（排除 `src/uni_modules/` 三方库）条件编译只允许出现在 `platform.js` 与 `env.js`；`grep -rl "#ifdef\|#ifndef" src --include=*.vue --include=*.js | grep -v uni_modules` 应只命中这两个文件。
 要新增第四个位置，先想清楚能不能收敛进 `platform.js` 的一个能力档 —— 一般都能。两个已收敛的先例：
 - 原白名单第四位 `components/app-modal/app-modal.vue` 的 H5 锁 body → 收进 `lockPageScroll`；
-- `pages/vehicle/obd` 的 11 处页内 `#ifdef` → 收进 `SCAN_MODE`（见 §1.6）。
+- 页面内的端差异一律收进 `SCAN_MODE` 等能力分档（见 §1.6）。
 `components/app-navbar/app-navbar.vue` **不是**例外：它只在注释里提到 `#ifdef`（正文写的是"页面/组件层零 #ifdef"），自身无任何条件编译指令。
 
-## H5 联调与 CORS（代理脚本已于 2026-09-22 移除）
+## H5 联调与代理
 
-`proxy-dev.py`（监听 10416 → 转发 `localhost:15000`、补 CORS 头并应答 OPTIONS 预检）**已按维护者要求删除**，
+H5 本地联调使用 Vite dev server 的同源代理（`vite.config.js` 的 `/v2`），不再使用独立代理脚本。
 `App.vue` 里那条「H5 dev host 不含 10416 就 warn」的自检也随之摘除。现在的事实是：
 
-- host 由 `.env.development` 驱动（`config/env.js` 读取）：`VITE_HOST_H5=http://localhost:15000/`，**H5 直连本地后端**。
-- **后端不应答 OPTIONS 预检**，所以浏览器里 H5 直连会撞 CORS：症状是所有请求 `ApiError(type:'network')`（文案「连接超时，请重试」）或控制台一个空 404 —— **不是后端挂了**。遇到先去问后端能否放行预检，别再去找那个已删除的脚本。
-- 微信小程序 / App 端本来就不需要代理（无浏览器同源限制）。
+- `.env.development` 的 `VITE_HOST_H5` **留空**，请求走相对路径 `/v2/...`，由 `vite.config.js` 代理到 `127.0.0.1:<后端端口>`（`init.sh` 自动同步端口）。
+- 代理只影响 `npm run dev:h5`；生产 H5 用 `VITE_HOST_H5`（同域留空 / 跨域由反向代理或后端 CORS 解决）。
+- 微信小程序 / App 端不需要代理（无浏览器同源限制），走 `VITE_HOST_MP/APP` 绝对地址。
 - `App.vue` 的 `onLaunch` 自检现存两条：非 H5 端 host 为空、或非绝对地址 → `console.error`。看到就先查 `.env*`，别查业务代码。
 
 ## 构建与编译验证（2026-09-20 起：uni-app CLI 链）
@@ -179,7 +178,7 @@ $bottom-bar-gap: $sp-2;                      // 16rpx —— 固定底栏下边�
 > 历史教训：build 脚本里曾有一条 `cp build→dev`，会把生产包灌进 `dist/dev` 导致真机测试报 host 错，2026-09-20 已删，**禁止再加回**。
 
 其余禁忌：
-- ❌ 不要指望 `manifest.json` 的 `h5.devServer` 代理：不被读取，那段配置是失效的，别浪费时间调。
+- ❌ 不要指望 `manifest.json` 的 `h5.devServer` 代理：CLI dev 以 `vite.config.js` 为准（manifest 只保留端口）。
 - ⚠️ 发小程序/App 前必须确认 `.env.production` 的 `VITE_HOST_MP`（现已填生产域名）与 `.env.production.local` 里的 `VITE_API_KEY`（密钥三环境各不同、走线下发放，**禁止明文提交**）；H5 若与后端同域可留空走相对路径。
 
 ## 样式与滚动的小程序兼容
@@ -194,8 +193,8 @@ $bottom-bar-gap: $sp-2;                      // 16rpx —— 固定底栏下边�
 
 ## 本文件独有的排查与现状
 
-- H5 请求 `ApiError(type:'network')`（文案「连接超时，请重试」）或控制台空 404：多半是**浏览器 CORS 预检被后端拦**（本项目已无本地代理脚本，见上文）。第一反应应是确认后端是否应答 OPTIONS，不是查前端代码。
-- `App.vue` 的 `onLaunch` 自检日志含义：非 H5 端 host 为空或非绝对地址 → `console.error`。看到就先查 `.env*`，别查业务代码。（**原「H5 dev host 不含 10416 就 warn」那条已随代理脚本移除**，见到老笔记还提 10416 一律以本文件为准。）
+- H5 请求 `ApiError(type:'network')`：先看 `vite.config.js` 的代理 target 是否与后端端口一致（`init.sh` 会同步），再查后端是否可达；生产跨域才查 CORS/反代。
+- `App.vue` 的 `onLaunch` 自检日志含义：非 H5 端 host 为空或非绝对地址 → `console.error`。看到就先查 `.env*`，别查业务代码。
 - `getLayout()` **进程内缓存一次**：横竖屏切换等场景不会自动重算，需要新值时自己处理。
 - 编译能否通过已由 `npm run verify:mp-weixin` + `verify:h5` 覆盖（dev 环境）；仍需真机/开发者工具验、AI 侧验不了的：渲染观感、rpx 缩放与字体、动画、小程序胶囊在各机型的高度、`scroll-view` 真机滚动（外层 `catchtouchmove` 与嵌套滚动的关系）、模板标识符笔误（script setup 下编译不报错、运行时静默 undefined）。
 - 现状：`.env.production` 三端 host 与 API Key 留空（按需求），发版前必须填（线下发放，不提交）。
@@ -210,14 +209,8 @@ $bottom-bar-gap: $sp-2;                      // 16rpx —— 固定底栏下边�
 - 底部安全区只有 `theme.scss` 的 `$safe-bottom` / `$safe-top` 一个来源，**禁止手写 `env(safe-area-inset-*)` / `constant(safe-area-inset-*)`**（唯一例外 = 三方组件自带的安全区开关）。
 - **固定底栏下边距恒为 `padding-bottom: $bottom-bar-gap;` + `padding-bottom: calc(#{$bottom-bar-gap} + #{$safe-bottom});` 两行**（或直接套 `.footer-bar`）：全项目一个数、不许各页自己挑（用户 2026-10-20「这个距离整个项目都需要一致，用常量、规定死」）。
 - **`calc()` 里出现 `env(safe-area-inset-*)` / `constant(...)` 时，上面必须有一行不含 env 的同属性回退**（如 `bottom: 220rpx;`）：混合写法失效时不留回退，元素会掉到 `auto` 或各页简写值上。
-- **页内输入框的键盘提交走 `confirm-type` + `@confirm`**（判据见 `rule-ui-components`）：微信端 `confirm-type` **仅 `type="text"` 生效**，且 **iOS 数字 / 小数键盘没有回车键** → 数字 / 金额输入无法从键盘提交，提交按钮必须保证键盘收起后可见（在文档流内，或真机确认 `fixed` 底栏未被压住）。**自动 focus（`onReady` 后约 300ms 置位）+ `.footer-bar` 固定底栏是本项目已知的真机风险组合**，只能真机验；**多行 `textarea` 不挂 `confirm-type`**（回车留给换行）。⚠️ **文档流 CTA 与 `fixed` 底栏对键盘的反应不是一回事**：文档流内容靠整页上滚保持可见；`fixed` 元素是被顶起、还是留在原位被盖住，取决于 webview 是否 resize。**前者验过不代表后者安全**，跨项目/跨布局的结论只作参照，`fixed` 底栏页面必须自己真机看（C 端 `price-edit` / `comment-editor` 两页即此类）。
-- `#ifdef` 只允许上文白名单三个位置（`services/platform.js`、`services/session.js`、`config/env.js`）；页面/业务组件里要写端差异，改成「`platform.js` 出能力档 + 页面消费标志」（范本 = `SCAN_MODE`），注释里也别留 `#ifdef` 字面量（会让这条禁令的 grep 证伪出假阳性）。
+- **页内输入框的键盘提交走 `confirm-type` + `@confirm`**（判据见 `rule-ui-components`）：微信端 `confirm-type` **仅 `type="text"` 生效**，且 **iOS 数字 / 小数键盘没有回车键** → 数字 / 金额输入无法从键盘提交，提交按钮必须保证键盘收起后可见（在文档流内，或真机确认 `fixed` 底栏未被压住）。**自动 focus（`onReady` 后约 300ms 置位）+ `.footer-bar` 固定底栏是本项目已知的真机风险组合**，只能真机验；**多行 `textarea` 不挂 `confirm-type`**（回车留给换行）。⚠️ **文档流 CTA 与 `fixed` 底栏对键盘的反应不是一回事**：文档流内容靠整页上滚保持可见；`fixed` 元素是被顶起、还是留在原位被盖住，取决于 webview 是否 resize。**前者验过不代表后者安全**，跨项目/跨布局的结论只作参照，`fixed` 底栏页面必须自己真机看（单字段输入页即此类）。
+- `#ifdef` 只允许上文白名单两个位置（`services/platform.js`、`config/env.js`）；页面/业务组件里要写端差异，改成「`platform.js` 出能力档 + 页面消费标志」（范本 = `SCAN_MODE`），注释里也别留 `#ifdef` 字面量（会让这条禁令的 grep 证伪出假阳性）。
 - 发布打包前必须最后跑一次 `build:*`：`verify:*` 与 `build:*` 同写 `dist/build/<平台>`，只跑过 verify 的产物是 dev 环境包（host 指向 `localhost:15000`），直接上传会把开发包发上生产。
 - 全屏浮层要锁页面滚动一律调 `lockPageScroll` / `unlockPageScroll`（引用计数），禁止组件里自写 `#ifdef H5` 或直接改 `document.body.style`。
 - **覆盖原生相机/地图/视频层的浮层，其祖先节点禁止挂 `@touchmove.stop.prevent`**（`catchtouchmove` 会静默废掉双指缩放等原生手势，真机才验得出）；确需锁滚只准加在不覆盖取流区的局部。轻震反馈一律调 `vibrateLight()`，禁止页面直调 `uni.vibrateShort`。
-
-## 来源
-
-提炼自 `docs/ARCHITECTURE.md` §5、§9 + `services/platform.js`、`config/env.js`、`App.vue` onLaunch 自检、`.claude/memory` 的 H5 代理记录核对；2026-09-10 并入原 `.claude/rules/scaffold-musts.md` §8（rules 目录已删除）；2026-09-20 工程迁 uni-app CLI 链后重写构建节——旧「禁 vite.config.js/package.json、HBuilderX 编译」禁忌作废，新增「验证必用 dev 环境（verify:*）」规则；
-**2026-09-22 同步批**：补 `getLayout()` 的 `capsuleReserve` / `tabBarOverlay` 两字段与 `callPhone`；新增 §1.5「能力分档优先于判端」与 §1.6 扫码 `SCAN_MODE`（P4 页 11 处页内条件编译已收敛进 platform.js，页面层恢复零 `#ifdef`）；白名单按全仓 grep 复核收紧为三处；构建节补「`verify:*` 与 `build:*` 同写 `dist/build`，后跑者覆盖」陷阱与 `cp build→dev` 历史教训；`TEST_OPENID` 口径改正为 `MOCK_LOGIN_CODE`；路径补 `src/` 总说明；同日第二批补 §1.7 跨端定位 `getCurrentCoord`（gcj02 口径、会话缓存 + 单飞、失败回 null 不上抛、三层降级链、两个平台侧外部前提）。
-**2026-11-25 补键盘输入口径**：`confirm-type` 仅 `type="text"` 生效、iOS 数字键盘无回车键；自动 focus + `.footer-bar` 固定底栏为真机风险组合（`price-edit` / `comment-editor` 待验）。

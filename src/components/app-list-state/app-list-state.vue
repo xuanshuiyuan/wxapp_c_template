@@ -56,6 +56,12 @@
 		<text class="state__retry" @click="$emit('retry')">{{ errorRetryText }}</text>
 	</u-empty>
 
+	<!-- 刷新失败但已有旧列表：保留列表，只在底部给一行重试，不把整页换成错误态 -->
+	<view v-else-if="status === 'refresh-error'" class="state">
+		<text class="state__text">{{ errorText }}</text>
+		<text class="state__retry" @click="$emit('retry')">{{ errorRetryText }}</text>
+	</view>
+
 	<!-- 加载更 / 到底：u-loadmore；关掉横线与粗点，保持原「一行灰字」观感 -->
 	<u-loadmore
 		v-else-if="status === 'more-loading' || status === 'more-finished'"
@@ -77,9 +83,10 @@ const props = defineProps({
 	// —— 来自 useList 的五个状态，直传 ——
 	firstLoading: { type: Boolean, default: false },
 	empty: { type: Boolean, default: false }, // isEmpty
-	// 错误消息。useList 给的是字符串，但 useVehiclePolling 直接存原始 ApiError 对象
-	// （useList 给字符串、轮询/请求层直接存 ApiError），故两种都收，由 errorText 统一归一
+	// 错误消息。useList 给字符串；页面自管取数可能直接存 ApiError 对象，两种都收，由 errorText 归一
 	error: { type: [String, Object], default: '' },
+	// 已有列表数据：刷新失败时保留列表 + 底部重试行，不整页替换成错误态
+	hasItems: { type: Boolean, default: false },
 	loading: { type: Boolean, default: false }, // 分页加载中
 	finished: { type: Boolean, default: false }, // 已到底
 

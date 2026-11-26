@@ -37,7 +37,6 @@ export const isProd = ENV === 'production';
 // 留空（H5 同域部署）时保持空串，走相对路径
 const host = HOST_MAP[runtime] || '';
 export const rootPath = host && !host.endsWith('/') ? `${host}/` : host;
-export const viewHost = import.meta.env.VITE_VIEW_HOST || '';
 export const ossHost = import.meta.env.VITE_OSS_HOST || '';
 
 // 签名密钥（后端 Verification.KeyList 中 source=1010 的那一把，线下领取，绝不进 git）
